@@ -1,0 +1,62 @@
+# ===========================
+# Android Build Outputs
+# ===========================
+build/
+app/build/
+*/build/
+
+# ===========================
+# Gradle Cache & Wrapper Dists
+# ===========================
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+wrapper/dists/
+
+# ===========================
+# Local Configuration
+# ===========================
+local.properties
+
+# ===========================
+# IDE / Android Studio
+# ===========================
+*.iml
+.idea/
+*.ipr
+*.iws
+.DS_Store
+Thumbs.db
+
+# ===========================
+# Java Heap Dumps (NEVER commit)
+# ===========================
+*.hprof
+
+# ===========================
+# Log Files
+# ===========================
+*.log
+
+# ===========================
+# Keystore / Signing
+# ===========================
+*.jks
+*.keystore
+release-keystore.jks
+
+# ===========================
+# Google Services
+# ===========================
+google-services.json
+
+# ===========================
+# Native / NDK
+# ===========================
+.externalNativeBuild/
+.cxx/
+
+# ===========================
+# Output / Capture Dirs
+# ===========================
+out/
+captures/

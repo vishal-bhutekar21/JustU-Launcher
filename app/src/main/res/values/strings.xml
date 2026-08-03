@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">JustU Launcher</string>
+    <string name="accessibility_service_description">JustU uses Accessibility to detect when you open YouTube Shorts and automatically redirect you back to the home screen, supporting your focus goals.</string>
+</resources>

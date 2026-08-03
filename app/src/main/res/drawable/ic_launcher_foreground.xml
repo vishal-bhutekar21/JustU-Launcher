@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer J shape -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 36,26 H 72 V 72 C 72,83 63,90 52,90 C 41,90 34,83 34,74 H 43 C 43,78 47,82 52,82 C 58,82 63,78 63,72 V 34 H 36 Z" />
+
+    <!-- Smartphone Body Contour -->
+    <path
+        android:fillColor="#000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:pathData="M 42,38 h 20 a 5,5 0 0,1 5,5 v 30 a 5,5 0 0,1 -5,5 h -20 a 5,5 0 0,1 -5,-5 v -30 a 5,5 0 0,1 5,-5 z" />
+
+    <!-- Phone Speaker Notch -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 49,41 h 6 a 1,1 0 0,1 1,1 v 0 a 1,1 0 0,1 -1,1 h -6 a 1,1 0 0,1 -1,-1 v 0 a 1,1 0 0,1 1,-1 z" />
+
+    <!-- Pause Icon || inside phone -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 47,50 h 3 v 12 h -3 z M 54,50 h 3 v 12 h -3 z" />
+
+</vector>
