@@ -56,6 +56,14 @@
             android:name=".MindfulLaunchActivity"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
 
+        <!-- Shown when Shorts is detected — redirects user away from Shorts -->
+        <activity
+            android:name=".ShortsBlockedActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+
         <!-- YouTube Shorts Blocker Accessibility Service -->
         <service
             android:name=".service.YouTubeShortsBlockerService"
