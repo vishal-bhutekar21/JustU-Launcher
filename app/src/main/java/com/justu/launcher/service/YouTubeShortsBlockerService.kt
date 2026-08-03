@@ -16,17 +16,19 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Accessibility Service that detects YouTube Shorts in all forms:
- *   1. Full-screen vertical Shorts feed
- *   2. Shorts mini-player (picture-in-picture / bottom sheet)
- *   3. Shorts shelf on the YouTube home feed
+ * Detects YouTube Shorts in ALL contexts:
  *
- * When detected and the toggle is ON:
- *   → Launches ShortsBlockedActivity (full-screen warning)
- *   → User can then choose to go to YouTube Home or exit YouTube entirely
+ *  1. YouTube App — via Activity class name (most reliable, obfuscation-proof)
+ *     YouTube's Shorts player Activity always contains "Reel" or "ShortsPlayer" in its class name.
  *
- * The service reads the toggle state live from DataStore so changes take
- * effect immediately without a restart.
+ *  2. YouTube App — via URL bar text if class name doesn't match
+ *     Some YouTube builds show a /shorts/ URL in an address-bar-style node.
+ *
+ *  3. Browsers (Chrome, Firefox, Samsung Internet, Edge, Opera, Brave, etc.)
+ *     Scans the address bar node for "/shorts/" in the URL text.
+ *
+ *  4. Mini-player / picture-in-picture fallback
+ *     Scans visible text on screen for Shorts-specific patterns.
  */
 @AndroidEntryPoint
 class YouTubeShortsBlockerService : AccessibilityService() {
@@ -36,26 +38,42 @@ class YouTubeShortsBlockerService : AccessibilityService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    @Volatile
-    private var blockingEnabled = false
+    @Volatile private var blockingEnabled = false
+    @Volatile private var lastBlockedTimeMs = 0L
+    private val debounceDurationMs = 2500L
 
-    // Debounce: don't re-trigger the warning screen if we already fired it recently
-    @Volatile
-    private var lastBlockedTimeMs = 0L
-    private val debounceMs = 2000L
+    // Packages we want to fully intercept (URL scanning + class-name scanning)
+    private val youtubePkg = "com.google.android.youtube"
+    private val youtubeKidsPkg = "com.google.android.apps.youtube.kids"
+    private val browserPackages = setOf(
+        "com.android.chrome",
+        "org.mozilla.firefox",
+        "org.mozilla.fenix",
+        "com.microsoft.emmx",           // Edge
+        "com.opera.browser",
+        "com.opera.mini.native",
+        "com.brave.browser",
+        "com.sec.android.app.sbrowser", // Samsung Internet
+        "com.UCMobile.intl",
+        "com.duckduckgo.mobile.android",
+        "com.kiwibrowser.browser",
+        "com.vivaldi.browser"
+    )
+    private val watchedPackages = setOf(youtubePkg, youtubeKidsPkg) + browserPackages
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-
         serviceInfo = AccessibilityServiceInfo().apply {
             eventTypes =
                 AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
-                AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+                AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
+                AccessibilityEvent.TYPE_VIEW_SCROLLED
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
-            // FLAG_REPORT_VIEW_IDS: needed to read viewIdResourceName
-            flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
-            packageNames = arrayOf(YOUTUBE_PACKAGE)
-            notificationTimeout = 200
+            flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
+                    AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
+                    AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
+            notificationTimeout = 100
+            // No packageNames filter — we handle all packages ourselves so we can also catch browsers
         }
 
         serviceScope.launch {
@@ -67,123 +85,150 @@ class YouTubeShortsBlockerService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (!blockingEnabled) return
-        if (event?.packageName?.toString() != YOUTUBE_PACKAGE) return
 
-        // Only act on meaningful window/content transitions
-        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) return
+        val pkg = event?.packageName?.toString() ?: return
+        if (!watchedPackages.contains(pkg)) return
+
+        // Debounce: don't show the screen repeatedly within 2.5 seconds
+        val now = System.currentTimeMillis()
+        if (now - lastBlockedTimeMs < debounceDurationMs) return
+
+        val isYouTubeApp = pkg == youtubePkg || pkg == youtubeKidsPkg
+
+        if (isYouTubeApp) {
+            handleYouTubeApp(event)
+        } else {
+            handleBrowser(event)
+        }
+    }
+
+    // ─── YouTube App Detection ────────────────────────────────────────────────
+
+    private fun handleYouTubeApp(event: AccessibilityEvent) {
+        // STRATEGY 1: Activity/Window class name
+        // YouTube Shorts opens in a specific Activity. The class name contains "Reel"
+        // or "ShortsPlayer" regardless of obfuscation level. This is the most reliable signal.
+        val className = event.className?.toString() ?: ""
+        if (isShortsClassName(className)) {
+            triggerBlock()
+            return
+        }
+
+        // STRATEGY 2: Scan the accessibility node tree
+        // Fallback if class name doesn't help (some YouTube variants).
+        val root = rootInActiveWindow ?: return
+        if (containsShortsInTree(root, isYouTubeApp = true)) {
+            triggerBlock()
+        }
+    }
+
+    /**
+     * Class names that confirm YouTube Shorts is active.
+     * YouTube may obfuscate class names but the Shorts host activity
+     * consistently includes one of these fragments.
+     */
+    private fun isShortsClassName(className: String): Boolean {
+        val lower = className.lowercase()
+        return lower.contains("reelwatchfragment") ||
+               lower.contains("reel_watch") ||
+               lower.contains("shortsplayer") ||
+               lower.contains("shortswatchfragment") ||
+               lower.contains("reelsfragment") ||
+               lower.contains("reelwatchplayerfragment")
+    }
+
+    // ─── Browser Detection ─────────────────────────────────────────────────────
+
+    private fun handleBrowser(event: AccessibilityEvent) {
+        // Only check on window change events for browsers — content changes are too noisy
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+            event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
 
         val root = rootInActiveWindow ?: return
-
-        val shortsType = detectShortsType(root)
-        if (shortsType != ShortsType.NONE) {
-            val now = System.currentTimeMillis()
-            if (now - lastBlockedTimeMs < debounceMs) return  // already handling it
-            lastBlockedTimeMs = now
-
-            when (shortsType) {
-                ShortsType.FULLSCREEN, ShortsType.SHELF -> launchBlockedScreen()
-                ShortsType.MINIPLAYER -> {
-                    // For mini-player: close it first, then launch warning
-                    collapseMiniPlayer(root)
-                    launchBlockedScreen()
-                }
-                ShortsType.NONE -> Unit
-            }
+        if (containsShortsInTree(root, isYouTubeApp = false)) {
+            triggerBlock()
         }
     }
 
-    /**
-     * Checks the view tree for Shorts indicators.
-     * Returns the most severe ShortsType found.
-     *
-     * Known view IDs across YouTube versions:
-     *  - reel_watch_fragment      → full-screen Shorts player
-     *  - shorts_shelf_item_title  → Shorts shelf on home feed
-     *  - reel_recycler_view       → Shorts vertical scroll feed
-     *  - mini_player_layout       → Shorts in mini-player
-     *  - inline_shorts            → Shorts embedded in feed
-     */
-    private fun detectShortsType(root: AccessibilityNodeInfo): ShortsType {
-        return scanNode(root)
-    }
+    // ─── Tree Scanner ─────────────────────────────────────────────────────────
 
-    private fun scanNode(node: AccessibilityNodeInfo?): ShortsType {
-        if (node == null) return ShortsType.NONE
+    /**
+     * Walks the accessibility node tree looking for Shorts indicators.
+     *
+     * For YouTube app: looks for known Shorts view IDs and selected Shorts tab.
+     * For browsers: looks for the URL address bar containing "/shorts/".
+     */
+    private fun containsShortsInTree(node: AccessibilityNodeInfo?, isYouTubeApp: Boolean): Boolean {
+        if (node == null) return false
 
         val viewId = node.viewIdResourceName?.lowercase() ?: ""
-        val contentDesc = node.contentDescription?.toString()?.lowercase() ?: ""
         val text = node.text?.toString() ?: ""
+        val contentDesc = node.contentDescription?.toString()?.lowercase() ?: ""
 
-        // Full-screen Shorts player (highest priority)
-        if (viewId.contains("reel_watch_fragment") ||
-            viewId.contains("reel_recycler_view") ||
-            viewId.contains("shorts_player_view")) {
-            return ShortsType.FULLSCREEN
-        }
-
-        // Shorts mini-player / picture-in-picture
-        if (viewId.contains("mini_player") && (
-            contentDesc.contains("shorts") ||
-            viewId.contains("shorts"))
-        ) {
-            return ShortsType.MINIPLAYER
-        }
-
-        // Shorts tab label (exact match to avoid catching "How to get more Shorts views")
-        if (text == "Shorts" && node.isClickable) {
-            // Only flag if this tab appears to be selected (focused/checked)
-            if (node.isFocused || node.isSelected || node.isChecked) {
-                return ShortsType.FULLSCREEN
-            }
-        }
-
-        // Shorts shelf on home feed
-        if (viewId.contains("shorts_shelf") ||
-            viewId.contains("inline_shorts") ||
-            viewId.contains("shorts_shelf_item")) {
-            return ShortsType.SHELF
-        }
-
-        // Recurse into children
-        var found = ShortsType.NONE
-        for (i in 0 until node.childCount) {
-            val childResult = scanNode(node.getChild(i))
-            if (childResult.priority > found.priority) {
-                found = childResult
-            }
-            if (found == ShortsType.FULLSCREEN) break  // can't do better
-        }
-        return found
-    }
-
-    /**
-     * Attempts to close/collapse the Shorts mini-player by finding its
-     * close button and performing a click action.
-     */
-    private fun collapseMiniPlayer(root: AccessibilityNodeInfo) {
-        fun findAndClick(node: AccessibilityNodeInfo?): Boolean {
-            if (node == null) return false
-            val viewId = node.viewIdResourceName?.lowercase() ?: ""
-            val desc = node.contentDescription?.toString()?.lowercase() ?: ""
-            if ((viewId.contains("close") || desc.contains("close") || desc.contains("dismiss"))
-                && viewId.contains("mini")) {
-                node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        if (isYouTubeApp) {
+            // View ID signals (YouTube app internal IDs)
+            if (viewId.contains("reel_watch_fragment") ||
+                viewId.contains("reel_recycler") ||
+                viewId.contains("shorts_player") ||
+                viewId.contains("reel_player")) {
                 return true
             }
-            for (i in 0 until node.childCount) {
-                if (findAndClick(node.getChild(i))) return true
+
+            // The "Shorts" tab: only count it if it's the SELECTED/FOCUSED tab
+            if (text.equals("Shorts", ignoreCase = false) &&
+                (node.isSelected || node.isChecked || node.isFocused)) {
+                return true
             }
-            return false
+
+            // URL text inside YouTube that contains /shorts/
+            if (text.contains("/shorts/", ignoreCase = true)) {
+                return true
+            }
+        } else {
+            // Browser: find the URL bar and check its text
+            val isUrlBar = viewId.contains("url_bar") ||
+                           viewId.contains("location_bar") ||
+                           viewId.contains("address_bar") ||
+                           viewId.contains("url_field") ||
+                           viewId.contains("omnibox") ||
+                           viewId.contains("search_field") ||
+                           contentDesc.contains("address bar") ||
+                           contentDesc.contains("url") ||
+                           contentDesc.contains("search")
+
+            if (isUrlBar && text.contains("/shorts/", ignoreCase = true)) {
+                return true
+            }
+
+            // Fallback: any text node on screen that's clearly a /shorts/ URL
+            if (text.matches(Regex(".*youtube\\.com/shorts/[A-Za-z0-9_\\-]+.*"))) {
+                return true
+            }
         }
-        findAndClick(root)
+
+        // Recurse — limit depth to avoid performance issues
+        val maxDepth = 8
+        return recurse(node, isYouTubeApp, depth = 0, maxDepth = maxDepth)
     }
 
-    /**
-     * Launches the full-screen warning screen.
-     * Uses FLAG_ACTIVITY_NEW_TASK since we're calling from a Service.
-     */
-    private fun launchBlockedScreen() {
+    private fun recurse(
+        node: AccessibilityNodeInfo,
+        isYouTubeApp: Boolean,
+        depth: Int,
+        maxDepth: Int
+    ): Boolean {
+        if (depth >= maxDepth) return false
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            if (containsShortsInTree(child, isYouTubeApp)) return true
+        }
+        return false
+    }
+
+    // ─── Block Action ─────────────────────────────────────────────────────────
+
+    private fun triggerBlock() {
+        lastBlockedTimeMs = System.currentTimeMillis()
         val intent = Intent(this, ShortsBlockedActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
@@ -197,20 +242,5 @@ class YouTubeShortsBlockerService : AccessibilityService() {
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
-    }
-
-    companion object {
-        private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
-    }
-
-    /**
-     * Priority order: FULLSCREEN > MINIPLAYER > SHELF > NONE
-     * Used to return the most severe detection from the tree scan.
-     */
-    private enum class ShortsType(val priority: Int) {
-        NONE(0),
-        SHELF(1),
-        MINIPLAYER(2),
-        FULLSCREEN(3)
     }
 }
