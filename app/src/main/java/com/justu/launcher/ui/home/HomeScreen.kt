@@ -311,6 +311,7 @@ fun FavoriteAppItem(
     context: Context,
     viewModel: HomeViewModel
 ) {
+    val exemptPackages = settings.exemptApps
     var showMenu by remember { mutableStateOf(false) }
 
     Box {
@@ -331,7 +332,8 @@ fun FavoriteAppItem(
                                 app.packageName,
                                 isFocusMode = settings.isFocusModeEnabled,
                                 isBlocked = isBlocked,
-                                favoritePackages = favoritePackages
+                                favoritePackages = favoritePackages,
+                                exemptPackages = exemptPackages
                             )
                         }
                     },

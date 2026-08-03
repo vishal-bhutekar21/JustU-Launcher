@@ -45,6 +45,7 @@ class SettingsRepository @Inject constructor(
         val BLOCKED_APPS = stringSetPreferencesKey("blocked_apps")
         val FAVORITES_ALIGNMENT = stringPreferencesKey("favorites_alignment")
         val BLOCK_YOUTUBE_SHORTS = booleanPreferencesKey("block_youtube_shorts")
+        val EXEMPT_APPS = stringSetPreferencesKey("exempt_apps")
     }
 
     val themeSettings: Flow<ThemeSettings> = dataStore.data
@@ -81,7 +82,8 @@ class SettingsRepository @Inject constructor(
                 maxFavoriteApps = preferences[PreferencesKeys.MAX_FAVORITE_APPS] ?: 5,
                 blockedApps = preferences[PreferencesKeys.BLOCKED_APPS] ?: emptySet(),
                 favoritesAlignment = preferences[PreferencesKeys.FAVORITES_ALIGNMENT] ?: "CENTER",
-                blockYoutubeShorts = preferences[PreferencesKeys.BLOCK_YOUTUBE_SHORTS] ?: false
+                blockYoutubeShorts = preferences[PreferencesKeys.BLOCK_YOUTUBE_SHORTS] ?: false,
+                exemptApps = preferences[PreferencesKeys.EXEMPT_APPS] ?: emptySet()
             )
         }
 
@@ -181,5 +183,8 @@ class SettingsRepository @Inject constructor(
     suspend fun toggleBlockYoutubeShorts(enabled: Boolean) {
         dataStore.edit { it[PreferencesKeys.BLOCK_YOUTUBE_SHORTS] = enabled }
     }
-}
 
+    suspend fun updateExemptApps(exemptApps: Set<String>) {
+        dataStore.edit { it[PreferencesKeys.EXEMPT_APPS] = exemptApps }
+    }
+}

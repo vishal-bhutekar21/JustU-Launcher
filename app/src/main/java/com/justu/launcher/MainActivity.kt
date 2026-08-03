@@ -46,6 +46,16 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    // Layout:
+                    //   Horizontal pages (left → right):
+                    //     0 = LeftScreen  (intentions / mindful content)
+                    //     1 = HomeScreen  (clock, favorites) — starts here
+                    //     2 = AppsScreen  (full app drawer with A–Z sidebar)
+                    //
+                    //   Vertical swipe-up from HomeScreen:
+                    //     0 = Horizontal pager (home row)
+                    //     1 = RightScreen (screen time stats)
+
                     val verticalPagerState = rememberPagerState(initialPage = 0) { 2 }
                     val horizontalPagerState = rememberPagerState(initialPage = 1) { 3 }
 
@@ -56,8 +66,8 @@ class MainActivity : ComponentActivity() {
                             } else if (horizontalPagerState.currentPage != 1) {
                                 horizontalPagerState.animateScrollToPage(1)
                             }
-                            // When on the homescreen (vertical=0, horizontal=1), we do nothing.
-                            // This safely swallows the back button so it doesn't reload the launcher.
+                            // When on homescreen (vertical=0, horizontal=1) back is swallowed
+                            // so pressing back doesn't reload the launcher.
                         }
                     }
 
@@ -72,13 +82,13 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxSize()
                                 ) { horizontalPage ->
                                     when (horizontalPage) {
-                                        0 -> LeftScreen()
-                                        1 -> HomeScreen()
-                                        2 -> RightScreen()
+                                        0 -> LeftScreen()      // swipe right-to-left → intentions
+                                        1 -> HomeScreen()      // center home
+                                        2 -> AppsScreen()      // swipe left-to-right → full app list
                                     }
                                 }
                             }
-                            1 -> AppsScreen()
+                            1 -> RightScreen()  // swipe up → screen time stats
                         }
                     }
                 }

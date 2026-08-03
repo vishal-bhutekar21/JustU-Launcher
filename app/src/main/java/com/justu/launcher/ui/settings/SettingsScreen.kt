@@ -174,6 +174,29 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // FAVORITE & EXEMPT APP PICKERS
+                SettingsCard(title = "App Shortcuts") {
+                    SettingsNavigationRow(
+                        title = "Choose Favorite Apps",
+                        subtitle = "${homeSettings.favoriteApps.size} of ${homeSettings.maxFavoriteApps} pinned to home",
+                        onClick = { currentSubScreen = SettingsSubScreen.BLOCKING }
+                    )
+
+                    Divider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(vertical = 4.dp))
+
+                    SettingsNavigationRow(
+                        title = "Timer-Exempt Apps",
+                        subtitle = "${homeSettings.exemptApps.size} apps skip the 5s mindful timer",
+                        onClick = { currentSubScreen = SettingsSubScreen.BLOCKING }
+                    )
+                    Text(
+                        text = "⚡ Exempt apps always open instantly. Long-press any app in the drawer to toggle.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.3f),
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                }
+
                 // THEME & FONTS
                 SettingsCard(title = "Theme & Typography") {
                     // Theme Mode Dropdown

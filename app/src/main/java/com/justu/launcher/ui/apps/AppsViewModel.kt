@@ -3,6 +3,7 @@ package com.justu.launcher.ui.apps
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.justu.launcher.data.model.AppInfo
+import com.justu.launcher.data.model.HomeSettings
 import com.justu.launcher.data.repository.AppRepository
 import com.justu.launcher.data.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,42 +17,17 @@ class AppsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    val homeSettings: StateFlow<com.justu.launcher.data.model.HomeSettings> = settingsRepository.homeSettings
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.justu.launcher.data.model.HomeSettings())
+    val homeSettings: StateFlow<HomeSettings> = settingsRepository.homeSettings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeSettings())
 
-    private val _allApps = MutableStateFlow<List<AppInfo>>(emptyList())
-    
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-    val filteredApps: StateFlow<List<AppInfo>> = combine(_allApps, _searchQuery) { apps, query ->
-        if (query.isEmpty()) {
-            apps
-        } else {
-            apps.filter { it.label.contains(query, ignoreCase = true) }
+    // All apps, sorted alphabetically, filtered by hidden list — no search
+    val apps: StateFlow<List<AppInfo>> = settingsRepository.homeSettings
+        .map { settings ->
+            appRepository.getInstalledApps()
+                .filter { !settings.hiddenApps.contains(it.packageName) }
+                .sortedBy { it.label.lowercase() }
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    init {
-        loadApps()
-    }
-
-    private fun loadApps() {
-        viewModelScope.launch {
-            val allApps = appRepository.getInstalledApps()
-            settingsRepository.homeSettings.collect { settings ->
-                _allApps.value = allApps.filter { !settings.hiddenApps.contains(it.packageName) }
-            }
-        }
-    }
-
-    fun onSearchQueryChanged(query: String) {
-        _searchQuery.value = query
-    }
-
-    fun updateSearchQuery(query: String) {
-        _searchQuery.value = query
-    }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun toggleFavorite(packageName: String) {
         viewModelScope.launch {
@@ -72,6 +48,15 @@ class AppsViewModel @Inject constructor(
             val currentHidden = currentSettings.hiddenApps.toMutableSet()
             currentHidden.add(packageName)
             settingsRepository.updateHiddenApps(currentHidden)
+        }
+    }
+
+    fun toggleExempt(packageName: String) {
+        viewModelScope.launch {
+            val currentSettings = settingsRepository.homeSettings.first()
+            val current = currentSettings.exemptApps.toMutableSet()
+            if (current.contains(packageName)) current.remove(packageName) else current.add(packageName)
+            settingsRepository.updateExemptApps(current)
         }
     }
 }
