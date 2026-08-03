@@ -54,8 +54,8 @@ class HomeViewModel @Inject constructor(
 
     private fun loadFavoriteApps() {
         viewModelScope.launch {
-            val allApps = appRepository.getInstalledApps()
             settingsRepository.homeSettings.collect { settings ->
+                val allApps = appRepository.getInstalledApps()
                 var favs = settings.favoriteApps.mapNotNull { pkg ->
                     allApps.find { it.packageName == pkg }
                 }

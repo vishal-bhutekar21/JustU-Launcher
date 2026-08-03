@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,15 +31,19 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
 
-private val DarkBg = Color(0xFF0A0A0A)
-private val AccentViolet = Color(0xFF9B5DE5)
-private val AccentTeal = Color(0xFF00BBD4)
+// ── Strictly black & white palette ────────────────────────────────────────
+private val BgColor      = Color(0xFF000000)   // pure black background
+private val AccentColor  = Color(0xFFFFFFFF)   // white accent / active indicator
+private val DimColor     = Color(0xFF333333)   // dimmed indicator / inactive elements
+private val CardColor    = Color(0xFF111111)   // slightly lifted surface
+private val TextPrimary  = Color(0xFFFFFFFF)   // main text
+private val TextSecondary = Color(0xFF888888)  // body text
 
 data class OnboardingPage(
     val tag: String,
     val headline: String,
     val body: String,
-    val emoji: String
+    val symbol: String
 )
 
 private val pages = listOf(
@@ -48,25 +51,25 @@ private val pages = listOf(
         tag = "WELCOME",
         headline = "Less Phone,\nMore Life.",
         body = "JustU is a mindful launcher built to help you reclaim your time, one intentional tap at a time.",
-        emoji = "✦"
+        symbol = "✦"
     ),
     OnboardingPage(
         tag = "MINDFUL LAUNCHING",
         headline = "Pause Before\nYou Open.",
         body = "Every app launch shows you a moment of reflection — asking 'Is this necessary?' so you decide with intention.",
-        emoji = "☽"
+        symbol = "☽"
     ),
     OnboardingPage(
         tag = "AWARENESS",
         headline = "Goals &\nReality Checks.",
         body = "Swipe left to set daily intentions. Swipe right to see your real screen-time stats and hold yourself accountable.",
-        emoji = "◎"
+        symbol = "◎"
     ),
     OnboardingPage(
         tag = "SETUP",
         headline = "Two Steps\nto Begin.",
         body = "Set JustU as your default launcher and grant usage access so we can show you honest screen time data.",
-        emoji = "◈"
+        symbol = "◈"
     )
 )
 
@@ -80,7 +83,7 @@ fun OnboardingDialog(
     val scope = rememberCoroutineScope()
 
     Dialog(
-        onDismissRequest = { /* Force explicit completion */ },
+        onDismissRequest = { /* must complete explicitly */ },
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             decorFitsSystemWindows = false
@@ -89,24 +92,8 @@ fun OnboardingDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(DarkBg)
+                .background(BgColor)
         ) {
-            // Gradient top accent
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-                    .align(Alignment.TopCenter)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                AccentViolet.copy(alpha = 0.15f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -114,7 +101,7 @@ fun OnboardingDialog(
                 Spacer(modifier = Modifier.statusBarsPadding())
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Page Indicator at top
+                // ── Page indicator pills ──────────────────────────────────
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.padding(bottom = 48.dp)
@@ -127,7 +114,7 @@ fun OnboardingDialog(
                             label = "indicatorWidth"
                         )
                         val color by animateColorAsState(
-                            targetValue = if (isSelected) AccentViolet else Color.White.copy(alpha = 0.2f),
+                            targetValue = if (isSelected) AccentColor else DimColor,
                             animationSpec = tween(300),
                             label = "indicatorColor"
                         )
@@ -142,32 +129,30 @@ fun OnboardingDialog(
                     }
                 }
 
-                // Pager
+                // ── Pager ─────────────────────────────────────────────────
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.weight(1f)
                 ) { page ->
-                    val p = pages[page]
                     if (page < pages.size - 1) {
-                        OnboardingSlide(page = p)
+                        OnboardingSlide(page = pages[page])
                     } else {
                         OnboardingFinalSlide(context = context, onComplete = onComplete)
                     }
                 }
 
-                // Footer
-                Spacer(modifier = Modifier.height(24.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 32.dp)
-                        .navigationBarsPadding(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (pagerState.currentPage < pages.size - 1) {
+                // ── Footer navigation ─────────────────────────────────────
+                if (pagerState.currentPage < pages.size - 1) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 32.dp)
+                            .navigationBarsPadding(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         TextButton(onClick = onComplete) {
-                            Text("Skip", color = Color.White.copy(alpha = 0.4f), fontSize = 14.sp)
+                            Text("Skip", color = TextSecondary, fontSize = 14.sp)
                         }
                         Button(
                             onClick = {
@@ -176,21 +161,22 @@ fun OnboardingDialog(
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = AccentViolet,
-                                contentColor = Color.White
+                                containerColor = AccentColor,
+                                contentColor = BgColor
                             ),
                             shape = RoundedCornerShape(50.dp),
-                            modifier = Modifier.height(52.dp).width(120.dp)
+                            modifier = Modifier
+                                .height(52.dp)
+                                .width(120.dp)
                         ) {
                             Text(
                                 text = if (pagerState.currentPage == pages.size - 2) "Finish" else "Next",
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
-                    } else {
-                        // On final slide, footer is hidden (final slide has its own CTA)
-                        Spacer(modifier = Modifier.height(52.dp))
                     }
+                } else {
+                    Spacer(modifier = Modifier.navigationBarsPadding())
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -207,19 +193,17 @@ fun OnboardingSlide(page: OnboardingPage) {
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Center
     ) {
-        // Large decorative emoji
         Text(
-            text = page.emoji,
+            text = page.symbol,
             fontSize = 64.sp,
-            color = AccentViolet,
+            color = AccentColor,
             modifier = Modifier.padding(bottom = 32.dp)
         )
-
         Text(
             text = page.tag,
             style = MaterialTheme.typography.labelMedium.copy(
                 letterSpacing = 4.sp,
-                color = AccentViolet.copy(alpha = 0.8f)
+                color = TextSecondary
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -227,7 +211,7 @@ fun OnboardingSlide(page: OnboardingPage) {
             text = page.headline,
             style = MaterialTheme.typography.displayMedium.copy(
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = TextPrimary,
                 lineHeight = 52.sp
             )
         )
@@ -235,7 +219,7 @@ fun OnboardingSlide(page: OnboardingPage) {
         Text(
             text = page.body,
             style = MaterialTheme.typography.bodyLarge.copy(
-                color = Color.White.copy(alpha = 0.65f),
+                color = TextSecondary,
                 lineHeight = 28.sp
             )
         )
@@ -262,7 +246,7 @@ fun OnboardingFinalSlide(
                 text = "SETUP",
                 style = MaterialTheme.typography.labelMedium.copy(
                     letterSpacing = 4.sp,
-                    color = AccentViolet.copy(alpha = 0.8f)
+                    color = TextSecondary
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -270,7 +254,7 @@ fun OnboardingFinalSlide(
                 text = "Almost\nThere.",
                 style = MaterialTheme.typography.displayMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = TextPrimary,
                     lineHeight = 52.sp
                 )
             )
@@ -278,14 +262,13 @@ fun OnboardingFinalSlide(
             Text(
                 text = "Complete the two steps below to start your intentional journey.",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    color = Color.White.copy(alpha = 0.65f),
+                    color = TextSecondary,
                     lineHeight = 28.sp
                 )
             )
         }
 
         Column {
-            // Step 1
             SetupActionCard(
                 stepNumber = "01",
                 title = "Set Default Launcher",
@@ -293,14 +276,10 @@ fun OnboardingFinalSlide(
                 isDone = launcherDone,
                 onClick = {
                     launcherDone = true
-                    val intent = Intent(Settings.ACTION_HOME_SETTINGS)
-                    context.startActivity(intent)
+                    context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
                 }
             )
-
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Step 2
             SetupActionCard(
                 stepNumber = "02",
                 title = "Grant Usage Access",
@@ -308,18 +287,15 @@ fun OnboardingFinalSlide(
                 isDone = usageDone,
                 onClick = {
                     usageDone = true
-                    val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                    context.startActivity(intent)
+                    context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
                 }
             )
-
             Spacer(modifier = Modifier.height(32.dp))
-
             Button(
                 onClick = onComplete,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = AccentViolet,
-                    contentColor = Color.White
+                    containerColor = AccentColor,
+                    contentColor = BgColor
                 ),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
@@ -328,7 +304,6 @@ fun OnboardingFinalSlide(
             ) {
                 Text("Start Using JustU", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
-
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
@@ -343,7 +318,7 @@ fun SetupActionCard(
     onClick: () -> Unit
 ) {
     val bgColor by animateColorAsState(
-        targetValue = if (isDone) AccentViolet.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f),
+        targetValue = if (isDone) Color(0xFF1A1A1A) else Color(0xFF111111),
         animationSpec = tween(400),
         label = "cardBg"
     )
@@ -359,34 +334,36 @@ fun SetupActionCard(
             modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Step Badge
             Box(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(if (isDone) AccentViolet else Color.White.copy(alpha = 0.1f)),
+                    .background(if (isDone) AccentColor else DimColor),
                 contentAlignment = Alignment.Center
             ) {
                 if (isDone) {
-                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                    Icon(
+                        Icons.Rounded.CheckCircle,
+                        contentDescription = null,
+                        tint = BgColor,
+                        modifier = Modifier.size(24.dp)
+                    )
                 } else {
-                    Text(stepNumber, color = Color.White.copy(alpha = 0.7f), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(stepNumber, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             }
-
             Spacer(modifier = Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    color = if (isDone) AccentViolet else Color.White,
+                    color = if (isDone) AccentColor else TextPrimary,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = description,
-                    color = Color.White.copy(alpha = 0.5f),
+                    color = TextSecondary,
                     fontSize = 13.sp,
                     lineHeight = 18.sp
                 )

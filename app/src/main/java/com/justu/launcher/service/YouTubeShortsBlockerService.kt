@@ -2,7 +2,6 @@ package com.justu.launcher.service
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
-import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.justu.launcher.data.repository.SettingsRepository
@@ -11,7 +10,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,81 +20,82 @@ class YouTubeShortsBlockerService : AccessibilityService() {
     lateinit var settingsRepository: SettingsRepository
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var isBlockingEnabled = false
+
+    // Live-updated from DataStore whenever the user toggles the setting
+    @Volatile
+    private var blockingEnabled = false
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        val info = AccessibilityServiceInfo().apply {
+
+        // Configure to only watch YouTube window events
+        serviceInfo = AccessibilityServiceInfo().apply {
             eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
                     AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
-            flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
-                    AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-            packageNames = arrayOf("com.google.android.youtube")
-            notificationTimeout = 100
+            flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+            packageNames = arrayOf(YOUTUBE_PACKAGE)
+            notificationTimeout = 150
         }
-        serviceInfo = info
 
-        // Observe toggle from settings
+        // Observe the toggle in real-time
         serviceScope.launch {
             settingsRepository.homeSettings.collect { settings ->
-                isBlockingEnabled = settings.blockYoutubeShorts
+                blockingEnabled = settings.blockYoutubeShorts
             }
         }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (!isBlockingEnabled) return
-        if (event == null) return
+        // Do nothing if the toggle is OFF
+        if (!blockingEnabled) return
+        if (event?.packageName?.toString() != YOUTUBE_PACKAGE) return
 
-        val packageName = event.packageName?.toString() ?: return
-        if (packageName != "com.google.android.youtube") return
-
-        // Check if the Shorts tab/feed is visible by inspecting the node tree
-        val rootNode = rootInActiveWindow ?: return
-        if (isShortsScreenVisible(rootNode)) {
-            // Kick the user back to the home screen
+        val root = rootInActiveWindow ?: return
+        if (isShortsVisible(root)) {
             performGlobalAction(GLOBAL_ACTION_HOME)
         }
     }
 
-    private fun isShortsScreenVisible(node: AccessibilityNodeInfo): Boolean {
-        // Look for "Shorts" content description or view IDs used by the YouTube Shorts tab/feed
-        val shortsIndicators = listOf(
-            "shorts",
-            "Shorts",
-            "reel_watch_fragment",
-            "shorts_container",
-            "shorts_shelf"
-        )
+    /**
+     * Walks the accessibility node tree looking for any node whose view ID,
+     * content description, or text matches known Shorts identifiers.
+     *
+     * YouTube's Shorts feed uses these IDs/labels across versions:
+     *   - reel_watch_fragment  (Shorts fullscreen player)
+     *   - shorts_shelf         (Shorts shelf on home feed)
+     *   - shorts_container     (wrapper in feed)
+     *   - "Shorts"             (tab label shown to user)
+     */
+    private fun isShortsVisible(node: AccessibilityNodeInfo): Boolean {
+        val viewId = node.viewIdResourceName?.lowercase() ?: ""
+        val desc   = node.contentDescription?.toString()?.lowercase() ?: ""
+        val text   = node.text?.toString() ?: ""
 
-        fun searchNode(n: AccessibilityNodeInfo?): Boolean {
-            if (n == null) return false
-            val desc = n.contentDescription?.toString()?.lowercase() ?: ""
-            val viewId = n.viewIdResourceName?.lowercase() ?: ""
-            val text = n.text?.toString()?.lowercase() ?: ""
-            if (shortsIndicators.any { indicator ->
-                    desc.contains(indicator.lowercase()) ||
-                    viewId.contains(indicator.lowercase()) ||
-                    text == indicator.lowercase()
-                }) {
-                return true
-            }
-            for (i in 0 until n.childCount) {
-                if (searchNode(n.getChild(i))) return true
-            }
-            return false
+        val matchesShorts =
+            viewId.contains("reel_watch_fragment") ||
+            viewId.contains("shorts_shelf") ||
+            viewId.contains("shorts_container") ||
+            desc.contains("shorts") ||
+            text == "Shorts"  // exact match on the tab label only, avoids false positives
+
+        if (matchesShorts) return true
+
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            if (isShortsVisible(child)) return true
         }
-
-        return searchNode(node)
+        return false
     }
 
-    override fun onInterrupt() {
-        // No-op
-    }
+    override fun onInterrupt() { /* required by AccessibilityService */ }
 
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
+    }
+
+    companion object {
+        private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
     }
 }

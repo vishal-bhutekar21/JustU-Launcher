@@ -8,7 +8,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,6 +29,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -86,36 +90,38 @@ fun HomeScreen(
     }
 
     val favoritePackages = remember(settings.favoriteApps) { settings.favoriteApps.toSet() }
+    val viewConfiguration = LocalViewConfiguration.current
+    val longPressMs = viewConfiguration.longPressTimeoutMillis
 
-    Box(modifier = modifier.fillMaxSize()) {
-        // Background layer to handle empty space gestures without stealing from children
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            if (devicePolicyManager.isAdminActive(componentName)) {
-                                devicePolicyManager.lockNow()
-                            } else {
-                                val intent = Intent(android.app.admin.DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
-                                    putExtra(android.app.admin.DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
-                                    putExtra(android.app.admin.DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Allow JustU Launcher to lock the screen on double tap.")
-                                }
-                                context.startActivity(intent)
-                            }
-                        },
-                        onLongPress = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.markTooltipSeen()
-                            val intent = Intent(context, Class.forName("com.justu.launcher.SettingsActivity"))
-                            context.startActivity(intent)
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            // Initial pass: we see the pointer event before children consume it.
+            // We only act on long-press; short taps propagate to children normally.
+            .pointerInput(longPressMs) {
+                awaitEachGesture {
+                    awaitFirstDown(pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                    var longPressed = false
+                    do {
+                        val event = withTimeoutOrNull(longPressMs) {
+                            awaitPointerEvent(pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
                         }
-                    )
-                }
-        )
+                        if (event == null) {
+                            longPressed = true
+                            break
+                        }
+                        if (event.changes.all { !it.pressed }) break
+                    } while (true)
 
+                    if (longPressed) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.markTooltipSeen()
+                        val intent = Intent(context, Class.forName("com.justu.launcher.SettingsActivity"))
+                        context.startActivity(intent)
+                    }
+                }
+            }
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -263,19 +269,29 @@ fun HomeScreen(
             ) {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = Color(0xFF111111),
+                    contentColor = Color.White,
                     modifier = Modifier.padding(32.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Welcome to JustU", style = MaterialTheme.typography.titleLarge)
+                        Text("Welcome to JustU", style = MaterialTheme.typography.titleLarge, color = Color.White)
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text("Long-press anywhere on the background to open settings.", textAlign = TextAlign.Center)
+                        Text(
+                            "Long-press anywhere on the background to open settings.",
+                            textAlign = TextAlign.Center,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.markTooltipSeen() }) {
+                        Button(
+                            onClick = { viewModel.markTooltipSeen() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White,
+                                contentColor = Color.Black
+                            )
+                        ) {
                             Text("Got it")
                         }
                     }
@@ -378,7 +394,7 @@ fun TermsAndConditionsDialog(onAgree: () -> Unit) {
                     Text(
                         text = "Terms & Conditions",
                         style = MaterialTheme.typography.displayMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color.White
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
@@ -393,7 +409,10 @@ fun TermsAndConditionsDialog(onAgree: () -> Unit) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Button(
                         onClick = onAgree,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        ),
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth().height(56.dp)
                     ) {
