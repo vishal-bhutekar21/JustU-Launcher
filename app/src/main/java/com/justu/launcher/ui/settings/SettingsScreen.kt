@@ -19,7 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.justu.launcher.data.model.ThemeMode
 
 enum class SettingsSubScreen {
-    MAIN, TERMS, ABOUT, BLOCKING
+    MAIN, TERMS, ABOUT, BLOCKING, FAVORITES, EXEMPT
 }
 
 @Composable
@@ -54,6 +54,23 @@ fun SettingsScreen(
                 allApps = installedApps,
                 blockedApps = homeSettings.blockedApps,
                 onToggleBlock = { viewModel.toggleBlockApp(it) },
+                onBack = { currentSubScreen = SettingsSubScreen.MAIN }
+            )
+        }
+        SettingsSubScreen.FAVORITES -> {
+            FavoriteAppsPickerScreen(
+                allApps = installedApps,
+                favoriteApps = homeSettings.favoriteApps,
+                maxFavorites = homeSettings.maxFavoriteApps,
+                onToggleFavorite = { viewModel.toggleFavoriteApp(it) },
+                onBack = { currentSubScreen = SettingsSubScreen.MAIN }
+            )
+        }
+        SettingsSubScreen.EXEMPT -> {
+            ExemptAppsScreen(
+                allApps = installedApps,
+                exemptApps = homeSettings.exemptApps,
+                onToggleExempt = { viewModel.toggleExemptApp(it) },
                 onBack = { currentSubScreen = SettingsSubScreen.MAIN }
             )
         }
@@ -179,7 +196,7 @@ fun SettingsScreen(
                     SettingsNavigationRow(
                         title = "Choose Favorite Apps",
                         subtitle = "${homeSettings.favoriteApps.size} of ${homeSettings.maxFavoriteApps} pinned to home",
-                        onClick = { currentSubScreen = SettingsSubScreen.BLOCKING }
+                        onClick = { currentSubScreen = SettingsSubScreen.FAVORITES }
                     )
 
                     Divider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(vertical = 4.dp))
@@ -187,7 +204,7 @@ fun SettingsScreen(
                     SettingsNavigationRow(
                         title = "Timer-Exempt Apps",
                         subtitle = "${homeSettings.exemptApps.size} apps skip the 5s mindful timer",
-                        onClick = { currentSubScreen = SettingsSubScreen.BLOCKING }
+                        onClick = { currentSubScreen = SettingsSubScreen.EXEMPT }
                     )
                     Text(
                         text = "⚡ Exempt apps always open instantly. Long-press any app in the drawer to toggle.",

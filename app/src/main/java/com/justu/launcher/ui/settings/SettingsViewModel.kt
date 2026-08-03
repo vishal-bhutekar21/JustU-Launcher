@@ -90,4 +90,22 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.toggleBlockYoutubeShorts(enabled)
         }
     }
+
+    fun toggleFavoriteApp(packageName: String) {
+        viewModelScope.launch {
+            val current = settingsRepository.homeSettings.first()
+            val favs = current.favoriteApps.toMutableList()
+            if (favs.contains(packageName)) favs.remove(packageName) else favs.add(packageName)
+            settingsRepository.updateFavoriteApps(favs)
+        }
+    }
+
+    fun toggleExemptApp(packageName: String) {
+        viewModelScope.launch {
+            val current = settingsRepository.homeSettings.first()
+            val exempt = current.exemptApps.toMutableSet()
+            if (exempt.contains(packageName)) exempt.remove(packageName) else exempt.add(packageName)
+            settingsRepository.updateExemptApps(exempt)
+        }
+    }
 }
