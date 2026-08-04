@@ -3,9 +3,8 @@ package com.justu.launcher.ui.onboarding
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -18,76 +17,86 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.justu.launcher.ui.onboarding.SetupActionCard
 import kotlinx.coroutines.launch
-import com.justu.launcher.utils.rememberUsageAccessGranted
 
-// ── Light blue onboarding palette ─────────────────────────────────────────
-private val BgColor       = Color(0xFFF4F8FD)
+// ── Premium Night Dark Palette ──────────────────────────────────────────
+private val BgColor       = Color(0xFF000000)
 private val AccentColor   = Color(0xFF2F6BFF)
-private val DimColor      = Color(0xFFD7E4FB)
-private val CardColor     = Color(0xFFF8FBFF)
-private val TextPrimary   = Color(0xFF152033)
-private val TextSecondary = Color(0xFF6F829E)
+private val DimColor      = Color(0xFF15171A)
+private val CardColor     = Color(0xFF0A0B0D)
+private val TextPrimary   = Color(0xFFFFFFFF)
+private val TextSecondary = Color(0xFFA1A4A8)
 
 data class OnboardingPage(
     val tag: String,
     val headline: String,
-    val body: String
+    val body: String,
+    val icon: ImageVector
 )
 
 private val pages = listOf(
     OnboardingPage(
         tag = "WELCOME",
         headline = "Less Phone,\nMore Life.",
-        body = "JustU Launcher is a mindful launcher built to help you reclaim your time, one intentional tap at a time."
+        body = "JustU Launcher is a mindful space built to help you reclaim your time, one intentional tap at a time.",
+        icon = Icons.Rounded.Spa
     ),
     OnboardingPage(
-        tag = "MINDFUL LAUNCHING",
+        tag = "MINDFUL LAUNCH",
         headline = "Pause Before\nYou Open.",
-        body = "Every app launch shows you a moment of reflection — asking 'Is this necessary?' so you decide with intention."
+        body = "Every app launch shows you a moment of reflection — asking 'Is this necessary?' so you decide with intention.",
+        icon = Icons.Rounded.Visibility
     ),
     OnboardingPage(
-        tag = "AWARENESS",
-        headline = "Goals &\nReality Checks.",
-        body = "Swipe left to set daily intentions. Swipe right to see your real screen-time stats and hold yourself accountable."
+        tag = "INTENTIONS",
+        headline = "Goals &\nIntentions.",
+        body = "Swipe left to set daily intentions and stay focused on what truly matters most today.",
+        icon = Icons.Rounded.Bolt
     ),
     OnboardingPage(
         tag = "SETUP",
-        headline = "Two Steps\nto Begin.",
-        body = "Set JustU Launcher as your default launcher and grant usage access so we can show you honest screen time data."
+        headline = "One Step\nto Begin.",
+        body = "Set JustU Launcher as your default launcher so every unlock is an intentional choice.",
+        icon = Icons.Rounded.SettingsSuggest
     )
 )
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingDialog(
+    initialPage: Int,
+    onPageChange: (Int) -> Unit,
     onComplete: () -> Unit,
     context: Context
 ) {
-    val pagerState = rememberPagerState(initialPage = 0) { pages.size }
+    val pagerState = rememberPagerState(initialPage = initialPage) { pages.size }
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(pagerState.currentPage) {
+        onPageChange(pagerState.currentPage)
+    }
+
     Dialog(
-        onDismissRequest = { /* must complete explicitly */ },
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false
-        )
+        onDismissRequest = { /* force explicit complete */ },
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         Box(
             modifier = Modifier
@@ -105,94 +114,67 @@ fun OnboardingDialog(
                 }
             }
 
-            Column(
+            // Navigation Bar
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = 24.dp, vertical = 68.dp)
             ) {
+                // Back Button
+                AnimatedVisibility(
+                    visible = pagerState.currentPage > 0,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    TextButton(onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } }) {
+                        Text("Back", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+
+                // Indicators
                 Row(
+                    modifier = Modifier.align(Alignment.Center),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     repeat(pages.size) { index ->
                         val isSelected = pagerState.currentPage == index
-                        val width by animateDpAsState(
-                            targetValue = if (isSelected) 26.dp else 8.dp,
-                            animationSpec = tween(300),
-                            label = "indicatorWidth"
-                        )
-                        val color by animateColorAsState(
-                            targetValue = if (isSelected) AccentColor else DimColor,
-                            animationSpec = tween(300),
-                            label = "indicatorColor"
-                        )
+                        val width by animateDpAsState(targetValue = if (isSelected) 24.dp else 8.dp, label = "w")
+                        val alpha by animateFloatAsState(targetValue = if (isSelected) 1f else 0.3f, label = "a")
                         Box(
                             modifier = Modifier
                                 .padding(horizontal = 4.dp)
-                                .height(8.dp)
+                                .height(6.dp)
                                 .width(width)
                                 .clip(CircleShape)
-                                .background(color)
+                                .background(AccentColor.copy(alpha = alpha))
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Next Button
+                Button(
+                    onClick = {
+                        if (pagerState.currentPage < pages.size - 1) {
+                            scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                        } else {
+                            onComplete()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentColor),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .height(56.dp),
+                    contentPadding = PaddingValues(horizontal = 24.dp)
                 ) {
-                    OutlinedButton(
-                        onClick = {
-                            if (pagerState.currentPage > 0) {
-                                scope.launch {
-                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                                }
-                            }
-                        },
-                        enabled = pagerState.currentPage > 0,
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                        shape = RoundedCornerShape(50.dp),
-                        modifier = Modifier
-                            .height(52.dp)
-                            .width(120.dp)
-                    ) {
-                        Text(
-                            text = "Previous",
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
-                    Button(
-                        onClick = {
-                            if (pagerState.currentPage < pages.size - 1) {
-                                scope.launch {
-                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                }
-                            } else {
-                                onComplete()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = AccentColor,
-                            contentColor = BgColor
-                        ),
-                        shape = RoundedCornerShape(50.dp),
-                        modifier = Modifier
-                            .height(52.dp)
-                            .width(120.dp)
-                    ) {
-                        Text(
-                            text = if (pagerState.currentPage == pages.size - 1) "Start" else "Next",
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                    Text(
+                        if (pagerState.currentPage == pages.size - 1) "Start" else "Next",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -201,44 +183,69 @@ fun OnboardingDialog(
 
 @Composable
 fun OnboardingSlide(page: OnboardingPage) {
+    val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 28.dp, vertical = 20.dp),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Center
+            .verticalScroll(scrollState)
+            .padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.Start
     ) {
-        Surface(
-            shape = RoundedCornerShape(999.dp),
-            color = CardColor,
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+        Spacer(modifier = Modifier.height(100.dp))
+
+        // Icon Glow Effect
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(AccentColor.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = page.tag,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    letterSpacing = 3.sp,
-                    color = TextSecondary
-                ),
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+            Icon(
+                imageVector = page.icon,
+                contentDescription = null,
+                tint = AccentColor,
+                modifier = Modifier.size(32.dp)
             )
         }
 
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = AccentColor.copy(alpha = 0.1f),
+            border = BorderStroke(1.dp, AccentColor.copy(alpha = 0.2f))
+        ) {
+            Text(
+                text = page.tag,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = AccentColor,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         Text(
             text = page.headline,
-            style = MaterialTheme.typography.displayMedium.copy(
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                lineHeight = 52.sp
-            )
+            style = MaterialTheme.typography.displayMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = TextPrimary,
+            lineHeight = 52.sp
         )
-        Spacer(modifier = Modifier.height(20.dp))
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         Text(
             text = page.body,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                color = TextSecondary,
-                lineHeight = 28.sp
-            )
+            style = MaterialTheme.typography.bodyLarge,
+            color = TextSecondary,
+            lineHeight = 32.sp,
+            fontSize = 19.sp
         )
+        
+        Spacer(modifier = Modifier.height(180.dp))
     }
 }
 
@@ -249,93 +256,81 @@ fun OnboardingFinalSlide(
 ) {
     val scrollState = rememberScrollState()
     var launcherDone by remember { mutableStateOf(false) }
-    val usageDone by rememberUsageAccessGranted(context)
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 28.dp, vertical = 20.dp)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
+            .verticalScroll(scrollState)
+            .padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.Start
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(100.dp))
+
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(AccentColor.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.RocketLaunch,
+                contentDescription = null,
+                tint = AccentColor,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
 
         Surface(
-            shape = RoundedCornerShape(999.dp),
-            color = CardColor,
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+            shape = RoundedCornerShape(8.dp),
+            color = AccentColor.copy(alpha = 0.1f),
+            border = BorderStroke(1.dp, AccentColor.copy(alpha = 0.2f))
         ) {
             Text(
-                text = "SETUP",
-                style = MaterialTheme.typography.labelMedium.copy(
-                    letterSpacing = 3.sp,
-                    color = TextSecondary
-                ),
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                text = "GET STARTED",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = AccentColor,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
             )
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Column {
-            Text(
-                text = "Almost\nThere.",
-                style = MaterialTheme.typography.displayMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
-                    lineHeight = 52.sp
-                )
-            )
-            Spacer(modifier = Modifier.height(14.dp))
-            Text(
-                text = "Complete the two steps below to start your intentional journey.",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    color = TextSecondary,
-                    lineHeight = 28.sp
-                )
-            )
-        }
+        Text(
+            text = "Almost\nThere.",
+            style = MaterialTheme.typography.displayMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = TextPrimary,
+            lineHeight = 52.sp
+        )
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Column {
-            SetupActionCard(
-                stepNumber = "01",
-                title = "Set Default Launcher",
-                description = "Make JustU Launcher your home screen so every unlock is intentional.",
-                isDone = launcherDone,
-                onClick = {
-                    launcherDone = true
-                    context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
-                }
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            SetupActionCard(
-                stepNumber = "02",
-                title = "Grant Usage Access",
-                description = "Allows JustU Launcher to show your honest daily screen-time breakdown.",
-                isDone = usageDone,
-                onClick = {
-                    context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-                }
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(
-                onClick = onComplete,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AccentColor,
-                    contentColor = BgColor
-                ),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-            ) {
-                Text("Start Using JustU Launcher", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text(
+            text = "Complete the final step below to start your intentional journey.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = TextSecondary,
+            lineHeight = 28.sp,
+            fontSize = 18.sp
+        )
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        SetupActionCard(
+            stepNumber = "01",
+            title = "Set Default Launcher",
+            description = "Make JustU Launcher your home screen so every unlock is intentional.",
+            isDone = launcherDone,
+            onClick = {
+                launcherDone = true
+                context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
             }
-            Spacer(modifier = Modifier.height(24.dp))
-        }
+        )
+        
+        Spacer(modifier = Modifier.height(180.dp))
     }
 }
 
@@ -348,55 +343,41 @@ fun SetupActionCard(
     onClick: () -> Unit
 ) {
     val bgColor by animateColorAsState(
-        targetValue = if (isDone) Color(0xFF1A1A1A) else Color(0xFF111111),
+        targetValue = if (isDone) AccentColor.copy(alpha = 0.1f) else CardColor,
         animationSpec = tween(400),
-        label = "cardBg"
+        label = "bg"
     )
 
     Surface(
         color = bgColor,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, if (isDone) AccentColor.copy(alpha = 0.4f) else Color.White.copy(alpha = 0.05f)),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
         Row(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(52.dp)
                     .clip(CircleShape)
                     .background(if (isDone) AccentColor else DimColor),
                 contentAlignment = Alignment.Center
             ) {
                 if (isDone) {
-                    Icon(
-                        Icons.Rounded.CheckCircle,
-                        contentDescription = null,
-                        tint = BgColor,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Icon(Icons.Rounded.CheckCircle, null, tint = Color.White, modifier = Modifier.size(28.dp))
                 } else {
-                    Text(stepNumber, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(stepNumber, color = AccentColor, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                 }
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(20.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    color = if (isDone) AccentColor else TextPrimary,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    color = TextSecondary,
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp
-                )
+                Text(title, color = if (isDone) AccentColor else TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(description, color = TextSecondary, fontSize = 14.sp, lineHeight = 22.sp)
             }
         }
     }

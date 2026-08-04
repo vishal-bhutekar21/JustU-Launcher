@@ -50,6 +50,7 @@ private val LightColorScheme = lightColorScheme(
 fun JustUTheme(
     themeMode: com.justu.launcher.data.model.ThemeMode = com.justu.launcher.data.model.ThemeMode.SYSTEM,
     fontFamily: String = "DEFAULT",
+    fontScale: Float = 1.0f,
     content: @Composable () -> Unit
 ) {
     val darkTheme = when(themeMode) {
@@ -85,7 +86,7 @@ fun JustUTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = getTypography(fontFamily),
+        typography = getTypography(fontFamily, fontScale),
         content = content
     )
 }

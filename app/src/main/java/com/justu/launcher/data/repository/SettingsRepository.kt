@@ -32,10 +32,10 @@ class SettingsRepository @Inject constructor(
         val SHOW_CLOCK = booleanPreferencesKey("show_clock")
         val SHOW_DATE = booleanPreferencesKey("show_date")
         val SHOW_BATTERY = booleanPreferencesKey("show_battery")
-        val SHOW_GREETING = booleanPreferencesKey("show_greeting")
         
         val HAS_AGREED_TO_TC = booleanPreferencesKey("has_agreed_to_tc")
         val HAS_COMPLETED_ONBOARDING = booleanPreferencesKey("has_completed_onboarding")
+        val ONBOARDING_PAGE = intPreferencesKey("onboarding_page")
         val HAS_SEEN_TOOLTIP = booleanPreferencesKey("has_seen_tooltip")
         val IS_FOCUS_MODE = booleanPreferencesKey("is_focus_mode")
         
@@ -72,9 +72,9 @@ class SettingsRepository @Inject constructor(
                 showClock = preferences[PreferencesKeys.SHOW_CLOCK] ?: true,
                 showDate = preferences[PreferencesKeys.SHOW_DATE] ?: true,
                 showBattery = preferences[PreferencesKeys.SHOW_BATTERY] ?: true,
-                showGreeting = preferences[PreferencesKeys.SHOW_GREETING] ?: true,
                 hasAgreedToTC = preferences[PreferencesKeys.HAS_AGREED_TO_TC] ?: false,
                 hasCompletedOnboarding = preferences[PreferencesKeys.HAS_COMPLETED_ONBOARDING] ?: false,
+                onboardingPage = preferences[PreferencesKeys.ONBOARDING_PAGE] ?: 0,
                 hasSeenHomescreenTooltip = preferences[PreferencesKeys.HAS_SEEN_TOOLTIP] ?: false,
                 isFocusModeEnabled = preferences[PreferencesKeys.IS_FOCUS_MODE] ?: false,
                 hiddenApps = preferences[PreferencesKeys.HIDDEN_APPS] ?: emptySet(),
@@ -106,14 +106,12 @@ class SettingsRepository @Inject constructor(
     suspend fun updateHomeElementVisibility(
         showClock: Boolean? = null,
         showDate: Boolean? = null,
-        showBattery: Boolean? = null,
-        showGreeting: Boolean? = null
+        showBattery: Boolean? = null
     ) {
         dataStore.edit { prefs ->
             showClock?.let { prefs[PreferencesKeys.SHOW_CLOCK] = it }
             showDate?.let { prefs[PreferencesKeys.SHOW_DATE] = it }
             showBattery?.let { prefs[PreferencesKeys.SHOW_BATTERY] = it }
-            showGreeting?.let { prefs[PreferencesKeys.SHOW_GREETING] = it }
         }
     }
 
@@ -123,6 +121,10 @@ class SettingsRepository @Inject constructor(
 
     suspend fun completeOnboarding() {
         dataStore.edit { it[PreferencesKeys.HAS_COMPLETED_ONBOARDING] = true }
+    }
+
+    suspend fun updateOnboardingPage(page: Int) {
+        dataStore.edit { it[PreferencesKeys.ONBOARDING_PAGE] = page }
     }
 
     suspend fun markTooltipSeen() {

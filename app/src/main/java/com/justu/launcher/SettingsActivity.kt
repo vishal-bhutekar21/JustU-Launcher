@@ -28,7 +28,11 @@ class SettingsActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val themeSettings by settingsRepository.themeSettings.collectAsState(initial = ThemeSettings())
-            JustUTheme(themeMode = themeSettings.themeMode, fontFamily = themeSettings.fontFamily) {
+            JustUTheme(
+                themeMode = themeSettings.themeMode,
+                fontFamily = themeSettings.fontFamily,
+                fontScale = themeSettings.fontScale
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

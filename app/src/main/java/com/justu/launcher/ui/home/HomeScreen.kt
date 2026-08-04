@@ -15,10 +15,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Phone
@@ -35,17 +35,26 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.justu.launcher.SettingsActivity
 import com.justu.launcher.data.model.AppInfo
 import com.justu.launcher.ui.onboarding.OnboardingDialog
+import com.justu.launcher.ui.settings.TermsAndConditionsScreen
 import com.justu.launcher.utils.AppLauncherInterceptor
 import java.util.Calendar
 
@@ -59,11 +68,33 @@ fun HomeScreen(
     val time by viewModel.currentTime.collectAsState()
     val date by viewModel.currentDate.collectAsState()
     val battery by viewModel.batteryLevel.collectAsState()
-    val usage by viewModel.todayUsage.collectAsState()
     val favApps by viewModel.favoriteApps.collectAsState()
 
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    var isDefaultLauncher by remember {
+        val intent = Intent(Intent.ACTION_MAIN)
+        intent.addCategory(Intent.CATEGORY_HOME)
+        val resolveInfo = context.packageManager.resolveActivity(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+        mutableStateOf(resolveInfo?.activityInfo?.packageName == context.packageName)
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val intent = Intent(Intent.ACTION_MAIN)
+                intent.addCategory(Intent.CATEGORY_HOME)
+                val resolveInfo = context.packageManager.resolveActivity(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+                isDefaultLauncher = resolveInfo?.activityInfo?.packageName == context.packageName
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val infiniteTransition = rememberInfiniteTransition(label = "clockBreathing")
     val clockAlpha by infiniteTransition.animateFloat(
@@ -76,18 +107,13 @@ fun HomeScreen(
         label = "clockAlpha"
     )
 
-    val isDefaultLauncher = remember {
-        val intent = Intent(Intent.ACTION_MAIN)
-        intent.addCategory(Intent.CATEGORY_HOME)
-        val resolveInfo = context.packageManager.resolveActivity(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
-        resolveInfo?.activityInfo?.packageName == context.packageName
-    }
-
     // Dialogs — shown in order: TC → Onboarding → Default Launcher prompt
     if (!settings.hasAgreedToTC) {
         TermsAndConditionsDialog(onAgree = { viewModel.agreeToTerms() })
     } else if (!settings.hasCompletedOnboarding) {
         OnboardingDialog(
+            initialPage = settings.onboardingPage,
+            onPageChange = { viewModel.updateOnboardingPage(it) },
             onComplete = { viewModel.completeOnboarding() },
             context = context
         )
@@ -190,21 +216,7 @@ fun HomeScreen(
                     else -> Arrangement.Center
                 }
 
-                if (settings.showGreeting) {
-                    Text(
-                        text = getGreeting(),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = "Screen Time: $usage",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(48.dp))
-                } else {
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
+                Spacer(modifier = Modifier.height(32.dp))
 
                 LazyColumn(
                     modifier = Modifier
@@ -278,10 +290,6 @@ fun HomeScreen(
 
             if (!settings.hasSeenHomescreenTooltip && settings.hasCompletedOnboarding && isDefaultLauncher) {
                 GuidedTourDialog(
-                    onOpenSettings = {
-                        val intent = Intent(context, SettingsActivity::class.java)
-                        context.startActivity(intent)
-                    },
                     onDismiss = { viewModel.markTooltipSeen() }
                 )
             }
@@ -362,52 +370,137 @@ private fun getGreeting(): String {
 
 @Composable
 fun TermsAndConditionsDialog(onAgree: () -> Unit) {
+    var showFullTerms by remember { mutableStateOf(false) }
+    var isChecked by remember { mutableStateOf(false) }
+
     Dialog(
         onDismissRequest = { /* Force action to close */ },
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.onBackground
+            color = Color(0xFF000000), // Force Night Dark
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Spacer(modifier = Modifier.height(48.dp))
-                    Text(
-                        text = "Terms & Conditions",
-                        style = MaterialTheme.typography.displayMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        text = "By using JustU Launcher – Digital Detox & Focus, you agree to our privacy policy and terms of service. This app is open-source, respects your digital wellbeing, and collects zero personal data. We require accessibility permissions solely to help block distracting feeds like YouTube Shorts on your behalf.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                        textAlign = TextAlign.Start,
-                        lineHeight = 28.sp
-                    )
-                }
-
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Button(
-                        onClick = onAgree,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth().height(56.dp)
-                    ) {
-                        Text("Agree & Continue", style = MaterialTheme.typography.titleMedium)
+            if (showFullTerms) {
+                TermsAndConditionsScreen(onBack = { showFullTerms = false })
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 32.dp, vertical = 64.dp),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(
+                            text = "Privacy &\nTransparency",
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(32.dp))
+                        
+                        // Sectioned indicator like onboarding
+                        Box(
+                            modifier = Modifier
+                                .width(48.dp)
+                                .height(6.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF2F6BFF).copy(alpha = 0.4f))
+                        )
+                        
+                        Spacer(modifier = Modifier.height(32.dp))
+                        
+                        Text(
+                            text = "JustU Launcher is built with a focus on your digital well-being. It is open-source, respects your privacy, and collects zero personal data.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color(0xFFA1A4A8),
+                            lineHeight = 30.sp,
+                            fontSize = 18.sp
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "To help you stay focused, we require accessibility permissions only to block distracting content like YouTube Shorts on your behalf.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color(0xFFA1A4A8),
+                            lineHeight = 30.sp,
+                            fontSize = 18.sp
+                        )
                     }
-                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Column {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { isChecked = !isChecked }
+                                .padding(vertical = 12.dp)
+                        ) {
+                            Checkbox(
+                                checked = isChecked,
+                                onCheckedChange = { isChecked = it },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = Color(0xFF2F6BFF),
+                                    uncheckedColor = Color.White.copy(alpha = 0.2f),
+                                    checkmarkColor = Color.White
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            val annotatedString = buildAnnotatedString {
+                                append("I agree to the ")
+                                pushStringAnnotation(tag = "terms", annotation = "terms")
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = Color(0xFF2F6BFF),
+                                        fontWeight = FontWeight.Bold,
+                                        textDecoration = TextDecoration.Underline
+                                    )
+                                ) {
+                                    append("Terms & Privacy Policy")
+                                }
+                                pop()
+                            }
+                            androidx.compose.foundation.text.ClickableText(
+                                text = annotatedString,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontSize = 16.sp
+                                ),
+                                onClick = { offset ->
+                                    annotatedString.getStringAnnotations(tag = "terms", start = offset, end = offset)
+                                        .firstOrNull()?.let {
+                                            showFullTerms = true
+                                        }
+                                }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        Button(
+                            onClick = onAgree,
+                            enabled = isChecked,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2F6BFF),
+                                contentColor = Color.White,
+                                disabledContainerColor = Color(0xFF2F6BFF).copy(alpha = 0.2f),
+                                disabledContentColor = Color.White.copy(alpha = 0.4f)
+                            ),
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(64.dp)
+                        ) {
+                            Text(
+                                "Agree & Continue",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp)) // Extra spacing at bottom
+                    }
                 }
             }
         }
@@ -419,27 +512,34 @@ fun DefaultLauncherDialog(context: Context) {
     var showDialog by remember { mutableStateOf(true) }
 
     if (showDialog) {
-        Dialog(onDismissRequest = { showDialog = false }) {
+        Dialog(
+            onDismissRequest = { showDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
             Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface
+                shape = RoundedCornerShape(28.dp),
+                color = Color(0xFF0A0B0D), // Night Dark Surface
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
+                modifier = Modifier.padding(24.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Set as Default",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "Intentional Home",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                     Text(
-                        text = "To get the best experience and prevent the system from closing the app, please set JustU Launcher as your default launcher.",
+                        text = "Set JustU as your default launcher to ensure every time you unlock your phone, it's with intention.",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                        textAlign = TextAlign.Center
+                        color = Color(0xFFA1A4A8),
+                        textAlign = TextAlign.Center,
+                        lineHeight = 26.sp,
+                        fontSize = 17.sp
                     )
                     Spacer(modifier = Modifier.height(32.dp))
 
@@ -448,19 +548,25 @@ fun DefaultLauncherDialog(context: Context) {
                             val intent = Intent(android.provider.Settings.ACTION_HOME_SETTINGS)
                             context.startActivity(intent)
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
-                        modifier = Modifier.fillMaxWidth()
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2F6BFF),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth().height(60.dp)
                     ) {
-                        Text("Open Settings")
+                        Text("Set as Default", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Not Now",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        modifier = Modifier.clickable { showDialog = false }.padding(8.dp)
-                    )
+                    TextButton(onClick = { showDialog = false }) {
+                        Text(
+                            text = "Maybe Later",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Color.White.copy(alpha = 0.4f),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
         }
@@ -469,7 +575,6 @@ fun DefaultLauncherDialog(context: Context) {
 
 @Composable
 fun GuidedTourDialog(
-    onOpenSettings: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -510,11 +615,6 @@ fun GuidedTourDialog(
                         body = "This is your clean launcher home with the clock, favorites, and focus controls."
                     )
                     GuidedTourItem(
-                        icon = Icons.Rounded.Analytics,
-                        title = "Reality Check",
-                        body = "Swipe right to review today vs yesterday usage, top apps, and your screen-time patterns."
-                    )
-                    GuidedTourItem(
                         icon = Icons.Rounded.Visibility,
                         title = "Mindful launch",
                         body = "Open apps through the launcher so you get a pause before distracting launches."
@@ -522,40 +622,47 @@ fun GuidedTourDialog(
                     GuidedTourItem(
                         icon = Icons.Rounded.Settings,
                         title = "Settings & setup",
-                        body = "Use Settings to enable usage access, pick favorites, and tune the launcher layout."
+                        body = "Use Settings to pick your favorite apps and tune the launcher layout to your liking."
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                        OutlinedButton(
-                            onClick = onOpenSettings,
-                            modifier = Modifier.weight(1f),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
-                        ) {
-                            Text("Open Settings")
-                        }
                         Button(
                             onClick = onDismiss,
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary)
                         ) {
-                            Text("Got it")
+                            Text("Got it", fontWeight = FontWeight.Bold)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    OutlinedButton(
-                        onClick = {
-                            onOpenSettings()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Open launcher settings")
+                        Row(
+                            modifier = Modifier.padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Visibility,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "Pro Tip: Swipe up from home to search Google. Long-press anywhere to open settings.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                        }
                     }
                 }
             }

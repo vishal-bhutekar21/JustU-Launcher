@@ -21,7 +21,7 @@ import com.justu.launcher.data.repository.SettingsRepository
 import com.justu.launcher.ui.apps.AppsScreen
 import com.justu.launcher.ui.home.HomeScreen
 import com.justu.launcher.ui.home.LeftScreen
-import com.justu.launcher.ui.home.RightScreen
+import com.justu.launcher.ui.search.SearchScreen
 import com.justu.launcher.ui.theme.JustUTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -41,20 +41,24 @@ class MainActivity : ComponentActivity() {
             val themeSettings by settingsRepository.themeSettings.collectAsState(initial = ThemeSettings())
             val coroutineScope = rememberCoroutineScope()
 
-            JustUTheme(themeMode = themeSettings.themeMode, fontFamily = themeSettings.fontFamily) {
+            JustUTheme(
+                themeMode = themeSettings.themeMode,
+                fontFamily = themeSettings.fontFamily,
+                fontScale = themeSettings.fontScale
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     // Layout:
-                    //   Horizontal pages (left → right):
-                    //     0 = LeftScreen  (intentions / mindful content)
-                    //     1 = HomeScreen  (clock, favorites) — starts here
-                    //     2 = AppsScreen  (full app drawer with A–Z sidebar)
+                    //   Vertical pages:
+                    //     0 = Main Horizontal Pager (Home row)
+                    //     1 = SearchScreen (Quick Google search)
                     //
-                    //   Vertical swipe-up from HomeScreen:
-                    //     0 = Horizontal pager (home row)
-                    //     1 = RightScreen (screen time stats)
+                    //   Horizontal pages (within Vertical page 0):
+                    //     0 = LeftScreen  (Intentions)
+                    //     1 = HomeScreen  (Main)
+                    //     2 = AppsScreen  (Drawer)
 
                     val verticalPagerState = rememberPagerState(initialPage = 0) { 2 }
                     val horizontalPagerState = rememberPagerState(initialPage = 1) { 3 }
@@ -66,8 +70,6 @@ class MainActivity : ComponentActivity() {
                             } else if (horizontalPagerState.currentPage != 1) {
                                 horizontalPagerState.animateScrollToPage(1)
                             }
-                            // When on homescreen (vertical=0, horizontal=1) back is swallowed
-                            // so pressing back doesn't reload the launcher.
                         }
                     }
 
@@ -82,13 +84,13 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxSize()
                                 ) { horizontalPage ->
                                     when (horizontalPage) {
-                                        0 -> LeftScreen()      // swipe right-to-left → intentions
-                                        1 -> HomeScreen()      // center home
-                                        2 -> AppsScreen()      // swipe left-to-right → full app list
+                                        0 -> LeftScreen()
+                                        1 -> HomeScreen()
+                                        2 -> AppsScreen()
                                     }
                                 }
                             }
-                            1 -> RightScreen()  // swipe up → screen time stats
+                            1 -> SearchScreen()
                         }
                     }
                 }

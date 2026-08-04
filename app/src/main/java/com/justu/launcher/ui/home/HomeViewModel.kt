@@ -6,7 +6,6 @@ import com.justu.launcher.data.model.AppInfo
 import com.justu.launcher.data.model.HomeSettings
 import com.justu.launcher.data.repository.AppRepository
 import com.justu.launcher.data.repository.SettingsRepository
-import com.justu.launcher.data.repository.UsageRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -23,8 +22,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val appRepository: AppRepository,
-    private val settingsRepository: SettingsRepository,
-    private val usageRepository: UsageRepository
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     val homeSettings: StateFlow<HomeSettings> = settingsRepository.homeSettings
@@ -42,14 +40,10 @@ class HomeViewModel @Inject constructor(
     private val _batteryLevel = MutableStateFlow("")
     val batteryLevel: StateFlow<String> = _batteryLevel.asStateFlow()
 
-    private val _todayUsage = MutableStateFlow("0h 0m")
-    val todayUsage: StateFlow<String> = _todayUsage.asStateFlow()
-
     init {
         loadFavoriteApps()
         startClock()
         startBatteryPolling()
-        startUsagePolling()
     }
 
     private fun loadFavoriteApps() {
@@ -96,18 +90,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun startUsagePolling() {
-        viewModelScope.launch {
-            while (true) {
-                val millis = usageRepository.getTodaysUsageTime()
-                val hours = (millis / (1000 * 60 * 60))
-                val minutes = (millis / (1000 * 60)) % 60
-                _todayUsage.value = "${hours}h ${minutes}m"
-                kotlinx.coroutines.delay(60000) // update every minute
-            }
-        }
-    }
-
     private fun getCurrentTimeString(): String {
         return SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
     }
@@ -125,6 +107,12 @@ class HomeViewModel @Inject constructor(
     fun completeOnboarding() {
         viewModelScope.launch {
             settingsRepository.completeOnboarding()
+        }
+    }
+
+    fun updateOnboardingPage(page: Int) {
+        viewModelScope.launch {
+            settingsRepository.updateOnboardingPage(page)
         }
     }
 

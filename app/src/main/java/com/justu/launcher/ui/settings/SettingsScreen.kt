@@ -117,9 +117,6 @@ fun SettingsScreen(
                     SettingsSwitchRow("Show Battery", homeSettings.showBattery) {
                         viewModel.updateHomeElementVisibility(showBattery = it)
                     }
-                    SettingsSwitchRow("Show Greeting", homeSettings.showGreeting) {
-                        viewModel.updateHomeElementVisibility(showGreeting = it)
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -268,53 +265,29 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
 
-                    // Font Family Dropdown
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("Font Family", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                            Text("Text style across the app", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                        }
-                        Box {
-                            Text(
-                                text = when (themeSettings.fontFamily.uppercase()) {
-                                    "MONOSPACE" -> "Monospace"
-                                    "SERIF" -> "Serif"
-                                    "SANS_SERIF" -> "Sans-Serif"
-                                    else -> "Default"
-                                },
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.clickable { showFontMenu = true }
-                            )
-                            DropdownMenu(
-                                expanded = showFontMenu,
-                                onDismissRequest = { showFontMenu = false }
-                            ) {
-                                listOf(
-                                    "DEFAULT" to "Default",
-                                    "SERIF" to "Serif",
-                                    "MONOSPACE" to "Monospace",
-                                    "SANS_SERIF" to "Sans-Serif"
-                                ).forEach { (value, label) ->
-                                    DropdownMenuItem(
-                                        text = { Text(label) },
-                                        onClick = {
-                                            viewModel.updateFontFamily(value)
-                                            showFontMenu = false
-                                        },
-                                        trailingIcon = {
-                                            if (themeSettings.fontFamily.uppercase() == value) {
-                                                Text("✓", color = MaterialTheme.colorScheme.primary)
-                                            }
-                                        }
-                                    )
-                                }
+                    // Font Size Slider
+                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Font Size", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text("Scale text across the launcher", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                             }
+                            Text(
+                                text = "${(themeSettings.fontScale * 100).toInt()}%",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
+                        Slider(
+                            value = themeSettings.fontScale,
+                            onValueChange = { viewModel.updateFontScale(it) },
+                            valueRange = 0.7f..1.5f,
+                            steps = 7
+                        )
                     }
                 }
 

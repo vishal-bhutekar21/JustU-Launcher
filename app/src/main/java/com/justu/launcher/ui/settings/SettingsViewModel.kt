@@ -41,17 +41,22 @@ class SettingsViewModel @Inject constructor(
     fun updateHomeElementVisibility(
         showClock: Boolean? = null,
         showDate: Boolean? = null,
-        showGreeting: Boolean? = null,
         showBattery: Boolean? = null
     ) {
         viewModelScope.launch {
-            settingsRepository.updateHomeElementVisibility(showClock, showDate, showBattery, showGreeting)
+            settingsRepository.updateHomeElementVisibility(showClock, showDate, showBattery)
         }
     }
 
     fun updateThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             settingsRepository.updateThemeMode(mode)
+        }
+    }
+
+    fun updateFontScale(scale: Float) {
+        viewModelScope.launch {
+            settingsRepository.updateFontScale(scale)
         }
     }
 
