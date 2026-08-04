@@ -1,5 +1,6 @@
 package com.justu.launcher.ui.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,7 @@ fun TermsAndConditionsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 24.dp)
@@ -42,20 +44,20 @@ fun TermsAndConditionsScreen(
 
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = Color(0xFF111111),
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
                     text = "1. Purely On-Device Privacy",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "JustU Launcher operates 100% locally on your device. We do not collect, transmit, sell, or store any personal data, app usage statistics, or analytics on external servers.",
+                    text = "JustU Launcher – Digital Detox & Focus operates 100% locally on your device. We do not collect, transmit, sell, or store any personal data, app usage statistics, or analytics on external servers.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -63,13 +65,13 @@ fun TermsAndConditionsScreen(
                 Text(
                     text = "2. Permission Disclosures",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "• Usage Access: Used exclusively to compute your daily screen time and present top used apps in Reality Check.\n• Device Admin (Optional): Used solely for double-tap to lock screen.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -77,13 +79,13 @@ fun TermsAndConditionsScreen(
                 Text(
                     text = "3. Open Source Commitment",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "JustU is an open-source digital wellbeing project built to help users reduce smartphone addiction and cultivate intentional habits.",
+                    text = "JustU Launcher is an open-source digital wellbeing project built to help users reduce smartphone addiction and cultivate intentional habits.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
         }
@@ -92,7 +94,7 @@ fun TermsAndConditionsScreen(
 
         Button(
             onClick = onBack,
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth().height(48.dp)
         ) {

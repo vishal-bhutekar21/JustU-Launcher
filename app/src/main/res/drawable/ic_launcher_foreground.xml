@@ -4,27 +4,32 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    
-    <!-- Outer J shape -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M 36,26 H 72 V 72 C 72,83 63,90 52,90 C 41,90 34,83 34,74 H 43 C 43,78 47,82 52,82 C 58,82 63,78 63,72 V 34 H 36 Z" />
 
-    <!-- Smartphone Body Contour -->
     <path
-        android:fillColor="#000000"
+        android:fillColor="#00000000"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.5"
-        android:pathData="M 42,38 h 20 a 5,5 0 0,1 5,5 v 30 a 5,5 0 0,1 -5,5 h -20 a 5,5 0 0,1 -5,-5 v -30 a 5,5 0 0,1 5,-5 z" />
+        android:strokeWidth="12"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 39,28 H 68 V 71 C 68,82 60,89 50,89 C 41,89 34,82 34,74" />
 
-    <!-- Phone Speaker Notch -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#7A7A7A"
+        android:strokeWidth="10"
+        android:strokeLineCap="round"
+        android:pathData="M 36,65 C 40,83 52,93 67,93 C 76,93 82,90 86,86" />
+
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M 49,41 h 6 a 1,1 0 0,1 1,1 v 0 a 1,1 0 0,1 -1,1 h -6 a 1,1 0 0,1 -1,-1 v 0 a 1,1 0 0,1 1,-1 z" />
+        android:pathData="M 46,41 h 8 a 2,2 0 0 1 2,2 v 1 a 2,2 0 0 1 -2,2 h -8 a 2,2 0 0 1 -2,-2 v -1 a 2,2 0 0 1 2,-2 z" />
 
-    <!-- Pause Icon || inside phone -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M 47,50 h 3 v 12 h -3 z M 54,50 h 3 v 12 h -3 z" />
+        android:pathData="M 47,54 h 5 a 2,2 0 0 1 2,2 v 12 a 2,2 0 0 1 -2,2 h -5 a 2,2 0 0 1 -2,-2 v -12 a 2,2 0 0 1 2,-2 z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 57,54 h 5 a 2,2 0 0 1 2,2 v 12 a 2,2 0 0 1 -2,2 h -5 a 2,2 0 0 1 -2,-2 v -12 a 2,2 0 0 1 2,-2 z" />
 
 </vector>

@@ -1,5 +1,6 @@
 package com.justu.launcher.ui.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,6 +28,7 @@ fun AppBlockingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 24.dp)
@@ -65,7 +67,7 @@ fun AppBlockingScreen(
                 val isBlocked = blockedApps.contains(app.packageName)
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = Color(0xFF111111),
+                    color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -76,8 +78,8 @@ fun AppBlockingScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = app.label, style = MaterialTheme.typography.titleMedium, color = Color.White)
-                            Text(text = app.packageName, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.4f))
+                            Text(text = app.label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Text(text = app.packageName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
                         }
 
                         Switch(
@@ -93,7 +95,7 @@ fun AppBlockingScreen(
 
         Button(
             onClick = onBack,
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth().height(48.dp)
         ) {

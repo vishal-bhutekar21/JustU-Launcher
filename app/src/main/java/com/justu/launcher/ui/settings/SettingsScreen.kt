@@ -3,6 +3,7 @@ package com.justu.launcher.ui.settings
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -84,6 +84,7 @@ fun SettingsScreen(
             Column(
                 modifier = modifier
                     .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
                     .statusBarsPadding()
                     .navigationBarsPadding()
                     .padding(horizontal = 24.dp)
@@ -131,10 +132,10 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Max Favorites Count", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                            Text("Display 1 to 10 apps on home", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.5f))
+                            Text("Max Favorites Count", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Display 1 to 10 apps on home", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                         }
-                        Text("${homeSettings.maxFavoriteApps}", style = MaterialTheme.typography.titleLarge, color = Color.White)
+                        Text("${homeSettings.maxFavoriteApps}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
                     }
                     Slider(
                         value = homeSettings.maxFavoriteApps.toFloat(),
@@ -143,7 +144,7 @@ fun SettingsScreen(
                         steps = 8
                     )
 
-                    Divider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), modifier = Modifier.padding(vertical = 8.dp))
 
                     // Favorites Placement Dropdown
                     Row(
@@ -152,8 +153,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Favorites Placement", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                            Text("Where to position apps on home", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.5f))
+                            Text("Favorites Placement", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Where to position apps on home", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                         }
                         Box {
                             Text(
@@ -163,7 +164,7 @@ fun SettingsScreen(
                                     else -> "Center"
                                 },
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = Color.White.copy(alpha = 0.6f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                                 modifier = Modifier.clickable { showAlignmentMenu = true }
                             )
                             DropdownMenu(
@@ -199,7 +200,7 @@ fun SettingsScreen(
                         onClick = { currentSubScreen = SettingsSubScreen.FAVORITES }
                     )
 
-                    Divider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(vertical = 4.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f), modifier = Modifier.padding(vertical = 4.dp))
 
                     SettingsNavigationRow(
                         title = "Timer-Exempt Apps",
@@ -209,7 +210,7 @@ fun SettingsScreen(
                     Text(
                         text = "⚡ Exempt apps always open instantly. Long-press any app in the drawer to toggle.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.3f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                     )
                 }
@@ -223,8 +224,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Theme Mode", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                            Text("App color scheme", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.5f))
+                            Text("Theme Mode", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Text("App color scheme", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                         }
                         Box {
                             Text(
@@ -235,7 +236,7 @@ fun SettingsScreen(
                                     ThemeMode.PURE_BLACK -> "Pure Black"
                                 },
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = Color.White.copy(alpha = 0.6f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                                 modifier = Modifier.clickable { showThemeMenu = true }
                             )
                             DropdownMenu(
@@ -265,7 +266,7 @@ fun SettingsScreen(
                         }
                     }
 
-                    Divider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
 
                     // Font Family Dropdown
                     Row(
@@ -274,8 +275,8 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Font Family", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                            Text("Text style across the app", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.5f))
+                            Text("Font Family", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Text style across the app", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                         }
                         Box {
                             Text(
@@ -286,7 +287,7 @@ fun SettingsScreen(
                                     else -> "Default"
                                 },
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = Color.White.copy(alpha = 0.6f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                 modifier = Modifier.clickable { showFontMenu = true }
                             )
                             DropdownMenu(
@@ -327,7 +328,7 @@ fun SettingsScreen(
                         onClick = { currentSubScreen = SettingsSubScreen.BLOCKING }
                     )
 
-                    Divider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(vertical = 4.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f), modifier = Modifier.padding(vertical = 4.dp))
 
                     // YouTube Shorts Blocker Toggle
                     Column(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -346,7 +347,7 @@ fun SettingsScreen(
                         Text(
                             text = "Uses Accessibility Service to redirect you out of the YouTube Shorts feed automatically.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.35f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                         )
                     }
@@ -358,7 +359,7 @@ fun SettingsScreen(
                 SettingsCard(title = "System Defaults") {
                     SettingsNavigationRow(
                         title = "Default Home Launcher",
-                        subtitle = "Select JustU as system home app",
+                        subtitle = "Select JustU Launcher as system home app",
                         onClick = {
                             val intent = Intent(Settings.ACTION_HOME_SETTINGS)
                             context.startActivity(intent)
@@ -376,7 +377,7 @@ fun SettingsScreen(
                         onClick = { currentSubScreen = SettingsSubScreen.TERMS }
                     )
 
-                    Divider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
 
                     SettingsNavigationRow(
                         title = "About & Open Source",
@@ -389,7 +390,7 @@ fun SettingsScreen(
 
                 Button(
                     onClick = onBack,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
@@ -416,7 +417,7 @@ fun SettingsCard(
         )
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = Color(0xFF111111),
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp), content = content)
@@ -435,7 +436,7 @@ fun SettingsSwitchRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium, color = Color.White)
+        Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
@@ -455,9 +456,9 @@ fun SettingsNavigationRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
-            Text(text = title, style = MaterialTheme.typography.titleMedium, color = Color.White)
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.5f))
+            Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
         }
-        Text(text = "→", style = MaterialTheme.typography.titleMedium, color = Color.White.copy(alpha = 0.5f))
+        Text(text = "→", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
     }
 }

@@ -46,6 +46,7 @@ fun FavoriteAppsPickerScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 24.dp)
@@ -55,13 +56,13 @@ fun FavoriteAppsPickerScreen(
         Text(
             text = "Favorite Apps",
             style = MaterialTheme.typography.displaySmall,
-            color = Color.White
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = "Choose up to $maxFavorites apps to pin on your home screen.",
             style = MaterialTheme.typography.bodyLarge,
-            color = Color.White.copy(alpha = 0.5f)
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -71,7 +72,7 @@ fun FavoriteAppsPickerScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF111111))
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -79,7 +80,7 @@ fun FavoriteAppsPickerScreen(
             Text(
                 text = "Selected",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onSurface
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 repeat(maxFavorites) { index ->
@@ -89,7 +90,7 @@ fun FavoriteAppsPickerScreen(
                             .padding(horizontal = 3.dp)
                             .size(8.dp)
                             .clip(CircleShape)
-                            .background(if (filled) Color.White else Color.White.copy(alpha = 0.2f))
+                            .background(if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -97,7 +98,7 @@ fun FavoriteAppsPickerScreen(
                     text = "$currentCount / $maxFavorites",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (currentCount >= maxFavorites) Color.White else Color.White.copy(alpha = 0.7f)
+                    color = if (currentCount >= maxFavorites) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
         }
@@ -111,10 +112,10 @@ fun FavoriteAppsPickerScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.White.copy(alpha = 0.4f),
-                unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
+                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             ),
             singleLine = true
         )
@@ -146,7 +147,7 @@ fun FavoriteAppsPickerScreen(
 
         Button(
             onClick = onBack,
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth().height(52.dp)
         ) {
@@ -174,7 +175,7 @@ private fun FavoriteAppPickerRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Color.White.copy(alpha = bgAlpha))
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = bgAlpha))
             .clickable(enabled = enabled, onClick = onToggle)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -184,13 +185,13 @@ private fun FavoriteAppPickerRow(
             Text(
                 text = app.label,
                 style = MaterialTheme.typography.titleMedium,
-                color = if (enabled) Color.White else Color.White.copy(alpha = 0.3f),
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                 fontWeight = if (isFavorite) FontWeight.SemiBold else FontWeight.Normal
             )
             Text(
                 text = app.packageName,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.25f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
                 fontSize = 10.sp
             )
         }
@@ -198,7 +199,7 @@ private fun FavoriteAppPickerRow(
         Icon(
             imageVector = if (isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
             contentDescription = null,
-            tint = if (isFavorite) Color.White else Color.White.copy(alpha = 0.25f),
+            tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
             modifier = Modifier.size(24.dp)
         )
     }
@@ -235,13 +236,13 @@ fun ExemptAppsScreen(
         Text(
             text = "Exempt apps open instantly — no 5-second mindful pause.",
             style = MaterialTheme.typography.bodyLarge,
-            color = Color.White.copy(alpha = 0.5f)
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = "Use this for important apps like Phone, Maps, or Messages.",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.35f)
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -253,10 +254,10 @@ fun ExemptAppsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.White.copy(alpha = 0.4f),
-                unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
+                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             ),
             singleLine = true
         )
@@ -278,7 +279,7 @@ fun ExemptAppsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(if (isExempt) Color.White.copy(alpha = 0.1f) else Color(0xFF0D0D0D))
+                        .background(if (isExempt) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface)
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -287,14 +288,14 @@ fun ExemptAppsScreen(
                         Text(
                             text = app.label,
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = if (isExempt) FontWeight.SemiBold else FontWeight.Normal
                         )
                         if (isExempt) {
                             Text(
                                 text = "⚡ Opens instantly",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.5f)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                             )
                         }
                     }
@@ -302,10 +303,10 @@ fun ExemptAppsScreen(
                         checked = isExempt,
                         onCheckedChange = { onToggleExempt(app.packageName) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.Black,
-                            checkedTrackColor = Color.White,
-                            uncheckedThumbColor = Color.White.copy(alpha = 0.5f),
-                            uncheckedTrackColor = Color.White.copy(alpha = 0.15f)
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            uncheckedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                         )
                     )
                 }
@@ -314,7 +315,7 @@ fun ExemptAppsScreen(
 
         Button(
             onClick = onBack,
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth().height(52.dp)
         ) {

@@ -2,6 +2,7 @@ package com.justu.launcher.utils
 
 import android.content.Context
 import android.content.Intent
+import com.justu.launcher.MindfulLaunchActivity
 
 object AppLauncherInterceptor {
 
@@ -52,7 +53,7 @@ object AppLauncherInterceptor {
         isFocusMode: Boolean,
         isBlocked: Boolean
     ) {
-        val mindfulIntent = Intent(context, Class.forName("com.justu.launcher.MindfulLaunchActivity")).apply {
+        val mindfulIntent = Intent(context, MindfulLaunchActivity::class.java).apply {
             putExtra("EXTRA_TARGET_INTENT", intent)
             putExtra("EXTRA_PACKAGE_NAME", packageName)
             putExtra("EXTRA_IS_FOCUS_MODE", isFocusMode)

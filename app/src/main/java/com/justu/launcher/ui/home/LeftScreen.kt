@@ -13,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -125,7 +124,7 @@ fun IntentionsHistoryDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(20.dp),
-            color = Color(0xFF111111),
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.75f)
@@ -139,12 +138,12 @@ fun IntentionsHistoryDialog(
                     Text(
                         text = "Past Intentions",
                         style = MaterialTheme.typography.titleLarge,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Close",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.5f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                         modifier = Modifier
                             .clickable { onDismiss() }
                             .padding(8.dp)
@@ -161,7 +160,7 @@ fun IntentionsHistoryDialog(
                         Text(
                             text = "No past intentions yet.\nStart writing today!",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = Color.White.copy(alpha = 0.4f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
@@ -174,7 +173,7 @@ fun IntentionsHistoryDialog(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .background(
-                                        color = Color.White.copy(alpha = 0.05f),
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
                                         shape = RoundedCornerShape(12.dp)
                                     )
                                     .padding(16.dp)
@@ -188,7 +187,7 @@ fun IntentionsHistoryDialog(
                                 Text(
                                     text = intention.text,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White.copy(alpha = 0.85f)
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
                                 )
                             }
                         }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +27,7 @@ fun AboutScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 24.dp)
@@ -40,7 +42,7 @@ fun AboutScreen(
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = "JustU Launcher v1.0 • Designed for Digital Wellbeing",
+            text = "JustU Launcher – Digital Detox & Focus v1.0.0 • Designed for Digital Wellbeing",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
         )
@@ -50,20 +52,20 @@ fun AboutScreen(
         // Developer Info Card
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = Color(0xFF111111),
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
                     text = "Created by Vishal Bhutekar",
                     style = MaterialTheme.typography.titleLarge,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "Crafted with passion for minimalist design, intentional habits, and open-source software.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
         }
@@ -73,7 +75,7 @@ fun AboutScreen(
         // Action Links
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = Color(0xFF111111),
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -84,7 +86,7 @@ fun AboutScreen(
                         openUrl(context, "https://github.com/vishal-bhutekar21/JustU-Launcher")
                     }
                 )
-                Divider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), modifier = Modifier.padding(vertical = 8.dp))
 
                 AboutActionRow(
                     title = "Share JustU Launcher",
@@ -93,7 +95,7 @@ fun AboutScreen(
                         shareApp(context)
                     }
                 )
-                Divider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), modifier = Modifier.padding(vertical = 8.dp))
 
                 AboutActionRow(
                     title = "Developer Portfolio",
@@ -102,7 +104,7 @@ fun AboutScreen(
                         openUrl(context, "https://vishalbhutekar.netlify.app/")
                     }
                 )
-                Divider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), modifier = Modifier.padding(vertical = 8.dp))
 
                 AboutActionRow(
                     title = "More Apps on Play Store",
@@ -111,7 +113,7 @@ fun AboutScreen(
                         openUrl(context, "https://play.google.com/store/apps/developer?id=Unexplored+Vishal")
                     }
                 )
-                Divider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), modifier = Modifier.padding(vertical = 8.dp))
 
                 AboutActionRow(
                     title = "Follow on Instagram",
@@ -120,7 +122,7 @@ fun AboutScreen(
                         openUrl(context, "https://www.instagram.com/unexplored_vish_2.0/")
                     }
                 )
-                Divider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), modifier = Modifier.padding(vertical = 8.dp))
 
                 AboutActionRow(
                     title = "Contact via Email",
@@ -136,7 +138,7 @@ fun AboutScreen(
 
         Button(
             onClick = onBack,
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth().height(48.dp)
         ) {
@@ -162,10 +164,10 @@ fun AboutActionRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
-            Text(text = title, style = MaterialTheme.typography.titleMedium, color = Color.White)
-            Text(text = subtitle, style = MaterialTheme.typography.bodyLarge, color = Color.White.copy(alpha = 0.5f))
+            Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(text = subtitle, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
         }
-        Text(text = "→", style = MaterialTheme.typography.titleMedium, color = Color.White.copy(alpha = 0.5f))
+        Text(text = "→", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
     }
 }
 
@@ -174,7 +176,6 @@ private fun openUrl(context: Context, url: String) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         context.startActivity(intent)
     } catch (e: Exception) {
-        e.printStackTrace()
     }
 }
 
@@ -182,13 +183,12 @@ private fun shareApp(context: Context) {
     try {
         val sendIntent = Intent().apply {
             action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, "Check out JustU Launcher - a minimalist, distraction-free launcher designed to give you your time back! Download now.")
+            putExtra(Intent.EXTRA_TEXT, "Check out JustU Launcher – Digital Detox & Focus - a minimalist, distraction-free launcher designed to give you your time back! Download now.")
             type = "text/plain"
         }
         val shareIntent = Intent.createChooser(sendIntent, "Share JustU Launcher")
         context.startActivity(shareIntent)
     } catch (e: Exception) {
-        e.printStackTrace()
     }
 }
 
@@ -196,10 +196,9 @@ private fun sendEmail(context: Context) {
     try {
         val intent = Intent(Intent.ACTION_SENDTO).apply {
             data = Uri.parse("mailto:vishal.bhutekar1@gmail.com")
-            putExtra(Intent.EXTRA_SUBJECT, "JustU Launcher Feedback")
+            putExtra(Intent.EXTRA_SUBJECT, "JustU Launcher – Digital Detox & Focus Feedback")
         }
         context.startActivity(Intent.createChooser(intent, "Send Email"))
     } catch (e: Exception) {
-        e.printStackTrace()
     }
 }

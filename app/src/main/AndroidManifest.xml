@@ -16,25 +16,35 @@
 
     <application
         android:name=".JustUApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:appCategory="productivity"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:label="@string/app_name"
+        android:label="@string/app_name_long"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
         <activity
             android:name=".MainActivity"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleTask"
             android:stateNotNeeded="true"
             android:clearTaskOnLaunch="true">
+        </activity>
+
+        <activity-alias
+            android:name=".LauncherActivityAlias"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name_short"
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
 
         <receiver
             android:name=".receiver.LauncherDeviceAdminReceiver"
@@ -50,10 +60,14 @@
 
         <activity
             android:name=".SettingsActivity"
+            android:exported="true"
+            android:label="@string/title_settings"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
 
         <activity
             android:name=".MindfulLaunchActivity"
+            android:exported="false"
+            android:label="@string/title_mindful_launch"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
 
         <!-- Shown when Shorts is detected — redirects user away from Shorts -->
@@ -62,13 +76,14 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
+            android:label="@string/title_shorts_blocked"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
 
         <!-- YouTube Shorts Blocker Accessibility Service -->
         <service
             android:name=".service.YouTubeShortsBlockerService"
             android:exported="true"
-            android:label="JustU Shorts Blocker"
+            android:label="@string/shorts_blocker_service_label"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />

@@ -2,7 +2,10 @@ package com.justu.launcher.service
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
+import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.justu.launcher.ShortsBlockedActivity
@@ -229,6 +232,19 @@ class YouTubeShortsBlockerService : AccessibilityService() {
 
     private fun triggerBlock() {
         lastBlockedTimeMs = System.currentTimeMillis()
+
+        // 1. Perform Global Back action to exit YouTube Shorts player/feed
+        performGlobalAction(GLOBAL_ACTION_BACK)
+
+        // 2. Pause any active media playback to prevent mini-player audio
+        try {
+            val audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            audioManager?.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE))
+            audioManager?.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PAUSE))
+        } catch (e: Exception) {
+        }
+
+        // 3. Launch full-screen ShortsBlockedActivity
         val intent = Intent(this, ShortsBlockedActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or

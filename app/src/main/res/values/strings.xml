@@ -1,4 +1,9 @@
 <resources>
-    <string name="app_name">JustU Launcher</string>
-    <string name="accessibility_service_description">JustU uses Accessibility to detect when you open YouTube Shorts and automatically redirect you back to the home screen, supporting your focus goals.</string>
+    <string name="app_name_long">JustU Launcher – Digital Detox &amp; Focus</string>
+    <string name="app_name_short">JustU Launcher</string>
+    <string name="title_settings">Settings</string>
+    <string name="title_mindful_launch">JustU Launcher</string>
+    <string name="title_shorts_blocked">JustU Launcher</string>
+    <string name="shorts_blocker_service_label">JustU Shorts Blocker</string>
+    <string name="accessibility_service_description">JustU Launcher uses Accessibility to detect when you open YouTube Shorts and automatically redirect you back to the home screen, supporting your focus goals.</string>
 </resources>

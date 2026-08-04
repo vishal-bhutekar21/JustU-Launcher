@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "JustULauncher"
+rootProject.name = "JustU Launcher – Digital Detox & Focus"
 include(":app")
