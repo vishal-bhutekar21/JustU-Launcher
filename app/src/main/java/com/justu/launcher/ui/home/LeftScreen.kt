@@ -14,11 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LeftScreen(
     modifier: Modifier = Modifier,
@@ -37,9 +38,8 @@ fun LeftScreen(
             .padding(32.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(48.dp))
 
-        // Header row with title and history icon
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -47,67 +47,77 @@ fun LeftScreen(
         ) {
             Column {
                 Text(
-                    text = "Daily Intentions",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.primary
+                    text = "INTENTIONS",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    letterSpacing = 4.sp
                 )
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Write your focus for today...",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                    text = "Write your focus",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
 
-            // History icon button
             IconButton(
                 onClick = { showHistory = true },
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
             ) {
                 Icon(
                     imageVector = Icons.Rounded.History,
-                    contentDescription = "View Intention History",
-                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                    modifier = Modifier.size(26.dp)
+                    contentDescription = "History",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(48.dp))
 
-        BasicTextField(
-            value = intentionText,
-            onValueChange = { viewModel.updateIntention(it) },
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onBackground
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            decorationBox = { innerTextField ->
-                if (intentionText.isEmpty()) {
-                    Text(
-                        text = "• Tap here to type your goals, thoughts, or reminders...",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
-                    )
-                }
-                innerTextField()
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        )
-
-        // Save indicator at bottom
-        if (intentionText.isNotEmpty()) {
-            Text(
-                text = "Auto-saved",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
-                modifier = Modifier.padding(top = 8.dp)
+        Box(modifier = Modifier.weight(1f)) {
+            BasicTextField(
+                value = intentionText,
+                onValueChange = { viewModel.updateIntention(it) },
+                textStyle = MaterialTheme.typography.headlineSmall.copy(
+                    color = MaterialTheme.colorScheme.onBackground,
+                    lineHeight = 36.sp,
+                    fontWeight = FontWeight.Normal
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                decorationBox = { innerTextField ->
+                    if (intentionText.isEmpty()) {
+                        Text(
+                            text = "What is the most important thing for you to accomplish today?",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f),
+                            lineHeight = 36.sp
+                        )
+                    }
+                    innerTextField()
+                },
+                modifier = Modifier.fillMaxWidth()
             )
+        }
+
+        if (intentionText.isNotEmpty()) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                modifier = Modifier.padding(top = 16.dp)
+            ) {
+                Text(
+                    text = "✓ Auto-saved",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                )
+            }
         }
     }
 
-    // History dialog
     if (showHistory) {
         IntentionsHistoryDialog(
             history = history,
@@ -123,42 +133,27 @@ fun IntentionsHistoryDialog(
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(32.dp),
             color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 8.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.75f)
+                .fillMaxHeight(0.8f)
+                .padding(horizontal = 8.dp)
         ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Past Intentions",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Close",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        modifier = Modifier
-                            .clickable { onDismiss() }
-                            .padding(8.dp)
-                    )
-                }
+            Column(modifier = Modifier.padding(32.dp)) {
+                Text(
+                    text = "Past Focus",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 if (history.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         Text(
-                            text = "No past intentions yet.\nStart writing today!",
+                            text = "Your journey starts today.",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -166,32 +161,42 @@ fun IntentionsHistoryDialog(
                     }
                 } else {
                     LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp)
                     ) {
                         items(history) { intention ->
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
-                                    .padding(16.dp)
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    text = intention.date,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = intention.text,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
-                                )
+                                Column(modifier = Modifier.padding(20.dp)) {
+                                    Text(
+                                        text = intention.date,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = intention.text,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                                    )
+                                }
                             }
                         }
                     }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth().height(64.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Text("Close", fontWeight = FontWeight.Bold)
                 }
             }
         }

@@ -5,9 +5,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +19,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.justu.launcher.data.model.ThemeSettings
 import com.justu.launcher.data.repository.SettingsRepository
 import com.justu.launcher.ui.apps.AppsScreen
@@ -63,6 +67,16 @@ class MainActivity : ComponentActivity() {
                     val verticalPagerState = rememberPagerState(initialPage = 0) { 2 }
                     val horizontalPagerState = rememberPagerState(initialPage = 1) { 3 }
 
+                    // Optimize vertical pager for instant, snappy swiping to search (Swipe Up to Open)
+                    // High stiffness and zero damping for an immediate, non-bouncy transition
+                    val verticalFlingBehavior = PagerDefaults.flingBehavior(
+                        state = verticalPagerState,
+                        snapAnimationSpec = spring(
+                            stiffness = 5000f, // Maximum stiffness for instant response
+                            dampingRatio = Spring.DampingRatioNoBouncy
+                        )
+                    )
+
                     BackHandler(enabled = true) {
                         coroutineScope.launch {
                             if (verticalPagerState.currentPage != 0) {
@@ -75,6 +89,8 @@ class MainActivity : ComponentActivity() {
 
                     VerticalPager(
                         state = verticalPagerState,
+                        flingBehavior = verticalFlingBehavior,
+                        pageSpacing = 0.dp,
                         modifier = Modifier.fillMaxSize()
                     ) { verticalPage ->
                         when (verticalPage) {

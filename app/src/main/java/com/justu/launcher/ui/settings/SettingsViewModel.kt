@@ -90,6 +90,18 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun toggleHiddenApp(packageName: String) {
+        viewModelScope.launch {
+            val currentHidden = homeSettings.value.hiddenApps.toMutableSet()
+            if (currentHidden.contains(packageName)) {
+                currentHidden.remove(packageName)
+            } else {
+                currentHidden.add(packageName)
+            }
+            settingsRepository.updateHiddenApps(currentHidden)
+        }
+    }
+
     fun toggleBlockYoutubeShorts(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.toggleBlockYoutubeShorts(enabled)

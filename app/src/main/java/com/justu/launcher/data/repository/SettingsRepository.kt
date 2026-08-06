@@ -46,6 +46,8 @@ class SettingsRepository @Inject constructor(
         val FAVORITES_ALIGNMENT = stringPreferencesKey("favorites_alignment")
         val BLOCK_YOUTUBE_SHORTS = booleanPreferencesKey("block_youtube_shorts")
         val EXEMPT_APPS = stringSetPreferencesKey("exempt_apps")
+        val HAS_INITIALIZED_EXEMPTIONS = booleanPreferencesKey("has_initialized_exemptions")
+        val TIMER_REMINDER_COUNT = intPreferencesKey("timer_reminder_count")
     }
 
     val themeSettings: Flow<ThemeSettings> = dataStore.data
@@ -83,7 +85,9 @@ class SettingsRepository @Inject constructor(
                 blockedApps = preferences[PreferencesKeys.BLOCKED_APPS] ?: emptySet(),
                 favoritesAlignment = preferences[PreferencesKeys.FAVORITES_ALIGNMENT] ?: "CENTER",
                 blockYoutubeShorts = preferences[PreferencesKeys.BLOCK_YOUTUBE_SHORTS] ?: false,
-                exemptApps = preferences[PreferencesKeys.EXEMPT_APPS] ?: emptySet()
+                exemptApps = preferences[PreferencesKeys.EXEMPT_APPS] ?: emptySet(),
+                hasInitializedExemptions = preferences[PreferencesKeys.HAS_INITIALIZED_EXEMPTIONS] ?: false,
+                timerReminderCount = preferences[PreferencesKeys.TIMER_REMINDER_COUNT] ?: 0
             )
         }
 
@@ -188,5 +192,13 @@ class SettingsRepository @Inject constructor(
 
     suspend fun updateExemptApps(exemptApps: Set<String>) {
         dataStore.edit { it[PreferencesKeys.EXEMPT_APPS] = exemptApps }
+    }
+
+    suspend fun markExemptionsInitialized() {
+        dataStore.edit { it[PreferencesKeys.HAS_INITIALIZED_EXEMPTIONS] = true }
+    }
+
+    suspend fun updateTimerReminderCount(count: Int) {
+        dataStore.edit { it[PreferencesKeys.TIMER_REMINDER_COUNT] = count }
     }
 }

@@ -139,7 +139,7 @@ fun AboutScreen(
         Button(
             onClick = onBack,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth().height(48.dp)
         ) {
             Text("Back to Settings")

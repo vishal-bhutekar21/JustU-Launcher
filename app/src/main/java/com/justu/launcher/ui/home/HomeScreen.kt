@@ -19,11 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CameraAlt
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Phone
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -98,16 +94,16 @@ fun HomeScreen(
 
     val infiniteTransition = rememberInfiniteTransition(label = "clockBreathing")
     val clockAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.5f,
+        initialValue = 0.6f,
         targetValue = 1.0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2500, easing = LinearEasing),
+            animation = tween(3000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "clockAlpha"
     )
 
-    // Dialogs — shown in order: TC → Onboarding → Default Launcher prompt
+    // Dialogs
     if (!settings.hasAgreedToTC) {
         TermsAndConditionsDialog(onAgree = { viewModel.agreeToTerms() })
     } else if (!settings.hasCompletedOnboarding) {
@@ -119,9 +115,13 @@ fun HomeScreen(
         )
     } else if (!isDefaultLauncher) {
         DefaultLauncherDialog(context = context)
+    } else if (settings.timerReminderCount < 5) {
+        DisturbingAppsReminderDialog(
+            onRemindMeLater = { viewModel.dismissTimerReminder(false) },
+            onNeverShowAgain = { viewModel.dismissTimerReminder(true) }
+        )
     }
 
-    val favoritePackages = remember(settings.favoriteApps) { settings.favoriteApps.toSet() }
     val viewConfiguration = LocalViewConfiguration.current
     val longPressMs = viewConfiguration.longPressTimeoutMillis
 
@@ -129,183 +129,296 @@ fun HomeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-                // Initial pass: we see the pointer event before children consume it.
-                // We only act on long-press; short taps propagate to children normally.
-                .pointerInput(longPressMs) {
-                    awaitEachGesture {
-                        awaitFirstDown(pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
-                        var longPressed = false
-                        do {
-                            val event = withTimeoutOrNull(longPressMs) {
-                                awaitPointerEvent(pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
-                            }
-                            if (event == null) {
-                                longPressed = true
-                                break
-                            }
-                            if (event.changes.all { !it.pressed }) break
-                        } while (true)
-
-                        if (longPressed) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.markTooltipSeen()
-                            val intent = Intent(context, SettingsActivity::class.java)
-                            context.startActivity(intent)
+            .pointerInput(longPressMs) {
+                awaitEachGesture {
+                    awaitFirstDown(pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                    var longPressed = false
+                    do {
+                        val event = withTimeoutOrNull(longPressMs) {
+                            awaitPointerEvent(pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
                         }
+                        if (event == null) {
+                            longPressed = true
+                            break
+                        }
+                        if (event.changes.all { !it.pressed }) break
+                    } while (true)
+
+                    if (longPressed) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.markTooltipSeen()
+                        val intent = Intent(context, SettingsActivity::class.java)
+                        context.startActivity(intent)
                     }
                 }
+            }
     ) {
-            // Top-right Settings Button
-            IconButton(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    val intent = Intent(context, SettingsActivity::class.java)
-                    context.startActivity(intent)
-                },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .statusBarsPadding()
-                    .padding(top = 12.dp, end = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Settings,
-                    contentDescription = "Settings",
-                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                    modifier = Modifier.size(24.dp)
+        // Settings Button
+        IconButton(
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                val intent = Intent(context, SettingsActivity::class.java)
+                context.startActivity(intent)
+            },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(top = 16.dp, end = 16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Settings,
+                contentDescription = "Settings",
+                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
+                modifier = Modifier.size(26.dp)
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Spacer(modifier = Modifier.height(100.dp))
+
+            if (settings.showClock) {
+                Text(
+                    text = time,
+                    style = MaterialTheme.typography.displayLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.alpha(clockAlpha)
                 )
             }
 
-            Column(
+            if (settings.showDate) {
+                Text(
+                    text = date,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            if (settings.showBattery && battery.isNotEmpty()) {
+                Text(
+                    text = "Battery $battery",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                    letterSpacing = 2.sp
+                )
+            }
+
+            val verticalArrangement = when (settings.favoritesAlignment) {
+                "TOP" -> Arrangement.Top
+                "BOTTOM" -> Arrangement.Bottom
+                else -> Arrangement.Center
+            }
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.Start
+                    .weight(1f)
+                    .fillMaxWidth(),
+                verticalArrangement = verticalArrangement
             ) {
-                Spacer(modifier = Modifier.height(96.dp))
+                items(favApps) { app ->
+                    FavoriteAppItem(
+                        app = app,
+                        settings = settings,
+                        haptic = haptic,
+                        context = context,
+                        viewModel = viewModel
+                    )
+                }
+            }
 
-                if (settings.showClock) {
-                    Text(
-                        text = time,
-                        style = MaterialTheme.typography.displayLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.alpha(clockAlpha)
+            // Bottom Shortcuts
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 40.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        val dialIntent = Intent(Intent.ACTION_DIAL).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
+                        context.startActivity(dialIntent)
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Phone,
+                        contentDescription = "Phone",
+                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(12.dp).size(28.dp)
                     )
                 }
 
-                if (settings.showDate) {
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.toggleFocusMode(!settings.isFocusModeEnabled)
+                    },
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (settings.isFocusModeEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) 
+                            else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f),
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                ) {
                     Text(
-                        text = date,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        text = if (settings.isFocusModeEnabled) "FOCUS ACTIVE" else "MINDFUL",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (settings.isFocusModeEnabled) MaterialTheme.colorScheme.primary 
+                                else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        letterSpacing = 3.sp
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                if (settings.showBattery && battery.isNotEmpty()) {
-                    Text(
-                        text = "Battery: $battery",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        val camIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
+                        context.startActivity(camIntent)
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.CameraAlt,
+                        contentDescription = "Camera",
+                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(12.dp).size(28.dp)
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+        }
+
+        if (!settings.hasSeenHomescreenTooltip && settings.hasCompletedOnboarding && isDefaultLauncher) {
+            GuidedTourDialog(onDismiss = { viewModel.markTooltipSeen() })
+        }
+    }
+}
+
+@Composable
+fun DisturbingAppsReminderDialog(
+    onRemindMeLater: () -> Unit,
+    onNeverShowAgain: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = { onRemindMeLater() }
+    ) {
+        Surface(
+            shape = RoundedCornerShape(32.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 12.dp,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Premium Icon Header
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.FilterTiltShift,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(40.dp)
+                    )
                 }
 
-                val verticalArrangement = when (settings.favoritesAlignment) {
-                    "TOP" -> Arrangement.Top
-                    "BOTTOM" -> Arrangement.Bottom
-                    else -> Arrangement.Center
+                Spacer(modifier = Modifier.height(28.dp))
+
+                Text(
+                    text = "Intentional Growth",
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "To help you stay focused, we've disabled the mindful timer for all apps initially.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 26.sp
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "We recommend adding 'disturbing' apps (like social media) back to the timer to reclaim your attention.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(16.dp),
+                        lineHeight = 22.sp
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    verticalArrangement = verticalArrangement
+                Button(
+                    onClick = onRemindMeLater,
+                    modifier = Modifier.fillMaxWidth().height(64.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.onBackground,
+                        contentColor = MaterialTheme.colorScheme.background
+                    )
                 ) {
-                    items(favApps) { app ->
-                        FavoriteAppItem(
-                            app = app,
-                            settings = settings,
-                            favoritePackages = favoritePackages,
-                            haptic = haptic,
-                            context = context,
-                            viewModel = viewModel
-                        )
-                    }
+                    Text("Remind me later", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
 
-                // Focus Mode toggle + Phone/Camera row at the bottom
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 32.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Phone shortcut (bottom-left)
-                    Icon(
-                        imageVector = Icons.Rounded.Phone,
-                        contentDescription = "Phone",
-                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clickable {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                val dialIntent = Intent(Intent.ACTION_DIAL).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
-                                context.startActivity(dialIntent)
-                            }
-                    )
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    // Focus Mode label (center)
+                TextButton(
+                    onClick = onNeverShowAgain,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(
-                        text = if (settings.isFocusModeEnabled) "• Focus Mode On" else "Focus Mode Off",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (settings.isFocusModeEnabled) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
-                        modifier = Modifier
-                            .clickable {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                viewModel.toggleFocusMode(!settings.isFocusModeEnabled)
-                            }
-                            .padding(horizontal = 12.dp, vertical = 8.dp)
-                    )
-
-                    // Camera shortcut (bottom-right)
-                    Icon(
-                        imageVector = Icons.Rounded.CameraAlt,
-                        contentDescription = "Camera",
-                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clickable {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                val camIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
-                                context.startActivity(camIntent)
-                            }
+                        text = "I've got it, don't show again",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                        letterSpacing = 1.sp
                     )
                 }
-            }
-
-            if (!settings.hasSeenHomescreenTooltip && settings.hasCompletedOnboarding && isDefaultLauncher) {
-                GuidedTourDialog(
-                    onDismiss = { viewModel.markTooltipSeen() }
-                )
             }
         }
     }
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FavoriteAppItem(
     app: AppInfo,
     settings: com.justu.launcher.data.model.HomeSettings,
-    favoritePackages: Set<String>,
     haptic: androidx.compose.ui.hapticfeedback.HapticFeedback,
     context: Context,
     viewModel: HomeViewModel
 ) {
+    val favoritePackages = remember(settings.favoriteApps) { settings.favoriteApps.toSet() }
     val exemptPackages = settings.exemptApps
     var showMenu by remember { mutableStateOf(false) }
 
@@ -337,7 +450,7 @@ fun FavoriteAppItem(
                         showMenu = true
                     }
                 )
-                .padding(vertical = 12.dp)
+                .padding(vertical = 16.dp)
         )
 
         DropdownMenu(
@@ -356,30 +469,18 @@ fun FavoriteAppItem(
     }
 }
 
-
-
-private fun getGreeting(): String {
-    val c = Calendar.getInstance()
-    return when (c.get(Calendar.HOUR_OF_DAY)) {
-        in 0..11 -> "Good Morning"
-        in 12..15 -> "Good Afternoon"
-        in 16..20 -> "Good Evening"
-        else -> "Good Night"
-    }
-}
-
 @Composable
 fun TermsAndConditionsDialog(onAgree: () -> Unit) {
     var showFullTerms by remember { mutableStateOf(false) }
     var isChecked by remember { mutableStateOf(false) }
 
     Dialog(
-        onDismissRequest = { /* Force action to close */ },
+        onDismissRequest = { },
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = Color(0xFF000000), // Force Night Dark
+            color = MaterialTheme.colorScheme.background,
         ) {
             if (showFullTerms) {
                 TermsAndConditionsScreen(onBack = { showFullTerms = false })
@@ -395,8 +496,7 @@ fun TermsAndConditionsDialog(onAgree: () -> Unit) {
                         Text(
                             text = "Privacy &\nTransparency",
                             style = MaterialTheme.typography.displayMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         Spacer(modifier = Modifier.height(32.dp))
                         
@@ -406,7 +506,7 @@ fun TermsAndConditionsDialog(onAgree: () -> Unit) {
                                 .width(48.dp)
                                 .height(6.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF2F6BFF).copy(alpha = 0.4f))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                         )
                         
                         Spacer(modifier = Modifier.height(32.dp))
@@ -414,7 +514,7 @@ fun TermsAndConditionsDialog(onAgree: () -> Unit) {
                         Text(
                             text = "JustU Launcher is built with a focus on your digital well-being. It is open-source, respects your privacy, and collects zero personal data.",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = Color(0xFFA1A4A8),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             lineHeight = 30.sp,
                             fontSize = 18.sp
                         )
@@ -422,7 +522,7 @@ fun TermsAndConditionsDialog(onAgree: () -> Unit) {
                         Text(
                             text = "To help you stay focused, we require accessibility permissions only to block distracting content like YouTube Shorts on your behalf.",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = Color(0xFFA1A4A8),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             lineHeight = 30.sp,
                             fontSize = 18.sp
                         )
@@ -441,8 +541,8 @@ fun TermsAndConditionsDialog(onAgree: () -> Unit) {
                                 checked = isChecked,
                                 onCheckedChange = { isChecked = it },
                                 colors = CheckboxDefaults.colors(
-                                    checkedColor = Color(0xFF2F6BFF),
-                                    uncheckedColor = Color.White.copy(alpha = 0.2f),
+                                    checkedColor = MaterialTheme.colorScheme.primary,
+                                    uncheckedColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
                                     checkmarkColor = Color.White
                                 )
                             )
@@ -452,7 +552,7 @@ fun TermsAndConditionsDialog(onAgree: () -> Unit) {
                                 pushStringAnnotation(tag = "terms", annotation = "terms")
                                 withStyle(
                                     style = SpanStyle(
-                                        color = Color(0xFF2F6BFF),
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Bold,
                                         textDecoration = TextDecoration.Underline
                                     )
@@ -464,7 +564,7 @@ fun TermsAndConditionsDialog(onAgree: () -> Unit) {
                             androidx.compose.foundation.text.ClickableText(
                                 text = annotatedString,
                                 style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = Color.White.copy(alpha = 0.7f),
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                     fontSize = 16.sp
                                 ),
                                 onClick = { offset ->
@@ -482,10 +582,8 @@ fun TermsAndConditionsDialog(onAgree: () -> Unit) {
                             onClick = onAgree,
                             enabled = isChecked,
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF2F6BFF),
-                                contentColor = Color.White,
-                                disabledContainerColor = Color(0xFF2F6BFF).copy(alpha = 0.2f),
-                                disabledContentColor = Color.White.copy(alpha = 0.4f)
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
                             ),
                             shape = RoundedCornerShape(20.dp),
                             modifier = Modifier
@@ -498,8 +596,6 @@ fun TermsAndConditionsDialog(onAgree: () -> Unit) {
                                 fontWeight = FontWeight.Bold
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(20.dp)) // Extra spacing at bottom
                     }
                 }
             }
@@ -518,8 +614,8 @@ fun DefaultLauncherDialog(context: Context) {
         ) {
             Surface(
                 shape = RoundedCornerShape(28.dp),
-                color = Color(0xFF0A0B0D), // Night Dark Surface
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
                 modifier = Modifier.padding(24.dp)
             ) {
                 Column(
@@ -530,13 +626,13 @@ fun DefaultLauncherDialog(context: Context) {
                         text = "Intentional Home",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(20.dp))
                     Text(
                         text = "Set JustU as your default launcher to ensure every time you unlock your phone, it's with intention.",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Color(0xFFA1A4A8),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                         textAlign = TextAlign.Center,
                         lineHeight = 26.sp,
                         fontSize = 17.sp
@@ -549,8 +645,8 @@ fun DefaultLauncherDialog(context: Context) {
                             context.startActivity(intent)
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2F6BFF),
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth().height(60.dp)
@@ -563,7 +659,7 @@ fun DefaultLauncherDialog(context: Context) {
                         Text(
                             text = "Maybe Later",
                             style = MaterialTheme.typography.labelLarge,
-                            color = Color.White.copy(alpha = 0.4f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -574,9 +670,7 @@ fun DefaultLauncherDialog(context: Context) {
 }
 
 @Composable
-fun GuidedTourDialog(
-    onDismiss: () -> Unit
-) {
+fun GuidedTourDialog(onDismiss: () -> Unit) {
     val scrollState = rememberScrollState()
 
     Dialog(

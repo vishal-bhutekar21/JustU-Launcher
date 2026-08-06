@@ -1,6 +1,8 @@
 package com.justu.launcher.ui.apps
 
+import android.content.Intent
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -10,6 +12,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,9 +26,9 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -32,6 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.justu.launcher.data.model.AppInfo
 import com.justu.launcher.utils.AppLauncherInterceptor
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 private val ALPHABET = ('A'..'Z').map { it.toString() } + listOf("#")
 
@@ -42,6 +47,7 @@ fun AppsScreen(
     viewModel: AppsViewModel = hiltViewModel(),
 ) {
     val apps by viewModel.apps.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
     val settings by viewModel.homeSettings.collectAsState()
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -99,10 +105,36 @@ fun AppsScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(start = 24.dp, end = 52.dp), // leave room for sidebar
+                .padding(start = 32.dp, end = 52.dp),
             contentPadding = PaddingValues(bottom = 64.dp, top = 24.dp)
         ) {
-            flatList.forEach { item ->
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.updateSearchQuery(it) },
+                    placeholder = { Text("Search apps...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    ),
+                    singleLine = true,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                )
+            }
+
+            flatList.forEachIndexed { index, item ->
                 if (item.header != null) {
                     stickyHeader(key = "header_${item.header}") {
                         Text(
@@ -111,11 +143,11 @@ fun AppsScreen(
                                 letterSpacing = 3.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(MaterialTheme.colorScheme.background)
-                                .padding(vertical = 8.dp)
+                                .padding(vertical = 12.dp)
                         )
                     }
                 } else if (item.app != null) {
@@ -123,22 +155,27 @@ fun AppsScreen(
                         val app = item.app
                         val isFavorite = favoritePackages.contains(app.packageName)
                         val isBlocked = settings.blockedApps.contains(app.packageName)
-                        val isExempt = exemptPackages.contains(app.packageName)
 
-                        // Modern Smooth Scroll Animation
+                        var isHighlighted by remember { mutableStateOf(false) }
+
                         val graphicsModifier = Modifier.graphicsLayer {
                             val layoutInfo = listState.layoutInfo
-                            val visibleItem = layoutInfo.visibleItemsInfo.find { it.key == app.packageName }
+                            val visibleItem = layoutInfo.visibleItemsInfo.find { it.index == index }
                             if (visibleItem != null) {
                                 val viewportHeight = layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset
                                 val itemCenter = visibleItem.offset + visibleItem.size / 2f
-                                val distanceFromCenter = kotlin.math.abs(viewportHeight / 2f - itemCenter)
+                                val center = viewportHeight / 2f
+                                val distanceFromCenter = abs(center - itemCenter)
                                 
-                                // Scale down items as they move away from the center of the screen
-                                val scale = (1f - ((distanceFromCenter / viewportHeight) * 0.15f)).coerceIn(0.85f, 1f)
+                                val normalizedDistance = (distanceFromCenter / (viewportHeight / 2f)).coerceIn(0f, 1f)
+                                isHighlighted = normalizedDistance < 0.08f // Tightened threshold
+
+                                // Smooth scale effect
+                                val scale = 1.08f - (normalizedDistance * 0.08f)
                                 scaleX = scale
                                 scaleY = scale
-                                alpha = (1f - ((distanceFromCenter / viewportHeight) * 0.5f)).coerceIn(0.5f, 1f)
+                                
+                                alpha = (1f - (normalizedDistance * 0.4f)).coerceIn(0.5f, 1f)
                             }
                         }
 
@@ -166,30 +203,27 @@ fun AppsScreen(
                                         }
                                     )
                                 }
-                                .padding(vertical = 12.dp),
+                                .padding(vertical = 14.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = app.label,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = when {
-                                    isBlocked -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f)
-                                    else -> MaterialTheme.colorScheme.onBackground
-                                }
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 20.sp
+                                ),
+                                color = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
                             )
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                if (isExempt) {
-                                    Text("⚡", fontSize = 13.sp)
-                                }
                                 if (isFavorite) {
-                                    Text("★", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+                                    Text("★", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
                                 }
                                 if (isBlocked) {
-                                    Text("Blocked", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f))
+                                    Text("Blocked", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error.copy(alpha = 0.4f))
                                 }
                             }
                         }
@@ -205,7 +239,7 @@ fun AppsScreen(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .fillMaxHeight()
-                .width(32.dp)
+                .width(40.dp)
                 .onGloballyPositioned { coords -> sidebarHeight = coords.size.height.toFloat() }
                 .pointerInput(letterIndexMap, sidebarHeight) {
                     detectDragGestures(
@@ -238,19 +272,6 @@ fun AppsScreen(
                         onDragCancel = { activeLetter = null }
                     )
                 }
-                .pointerInput(letterIndexMap, sidebarHeight) {
-                    detectTapGestures { offset ->
-                        val fraction = (offset.y / sidebarHeight).coerceIn(0f, 1f)
-                        val idx = (fraction * ALPHABET.size).toInt().coerceIn(0, ALPHABET.lastIndex)
-                        val letter = ALPHABET[idx]
-                        if (presentLetters.contains(letter)) {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            letterIndexMap[letter]?.let { listIdx ->
-                                scope.launch { listState.scrollToItem(listIdx) }
-                            }
-                        }
-                    }
-                }
         ) {
             Column(
                 modifier = Modifier
@@ -261,38 +282,32 @@ fun AppsScreen(
             ) {
                 ALPHABET.forEach { letter ->
                     val isActive = activeLetter == letter
-                    val scale by animateFloatAsState(
-                        targetValue = if (isActive) 1.4f else if (presentLetters.contains(letter)) 1f else 0.7f,
-                        animationSpec = spring(stiffness = Spring.StiffnessHigh),
-                        label = "letterScale"
-                    )
                     Text(
                         text = letter,
-                        fontSize = (9 * scale).sp,
-                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.Normal,
                         color = when {
                             isActive -> MaterialTheme.colorScheme.primary
-                            presentLetters.contains(letter) -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f)
-                            else -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f)
+                            presentLetters.contains(letter) -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
+                            else -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f)
                         },
-                        modifier = Modifier.padding(vertical = 0.5.dp)
+                        modifier = Modifier.padding(vertical = 1.dp)
                     )
                 }
             }
         }
 
-        // Active letter bubble overlay (right side, near sidebar)
+        // Active letter bubble overlay
         if (activeLetter != null) {
             Box(
                 modifier = Modifier
-                    .padding(end = 56.dp)
-                    .size(48.dp)
+                    .padding(end = 64.dp)
+                    .size(64.dp)
                     .align(Alignment.CenterEnd)
                     .graphicsLayer {
                         scaleX = letterBubbleAlpha
                         scaleY = letterBubbleAlpha
                         alpha = letterBubbleAlpha
-                        translationX = (1f - letterBubbleAlpha) * 40f
                     }
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary),
@@ -300,8 +315,7 @@ fun AppsScreen(
             ) {
                 Text(
                     text = activeLetter ?: "",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             }
@@ -316,56 +330,162 @@ fun AppsScreen(
 
         Dialog(onDismissRequest = { showAppMenu = null }) {
             Surface(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(32.dp),
                 color = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface
+                tonalElevation = 16.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
             ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    Text(app.label, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(modifier = Modifier.height(4.dp))
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // App Header
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Apps,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = app.label,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                    
                     Text(
                         text = app.packageName,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                        textAlign = TextAlign.Center
                     )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Action Grid/List
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Favorite Toggle
+                        AppMenuButton(
+                            icon = if (isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                            text = if (isFavorite) "Remove Favorite" else "Pin to Home",
+                            isSelected = isFavorite,
+                            onClick = {
+                                viewModel.toggleFavorite(app.packageName)
+                                showAppMenu = null
+                            }
+                        )
+
+                        // Timer Exemption Toggle
+                        AppMenuButton(
+                            icon = Icons.Rounded.Bolt,
+                            text = if (isExempt) "Disable Instant Launch" else "Enable Instant Launch",
+                            isSelected = isExempt,
+                            onClick = {
+                                viewModel.toggleExempt(app.packageName)
+                                showAppMenu = null
+                            }
+                        )
+
+                        // Hide App
+                        AppMenuButton(
+                            icon = Icons.Rounded.VisibilityOff,
+                            text = "Hide from Drawer",
+                            isSelected = false,
+                            onClick = {
+                                viewModel.hideApp(app.packageName)
+                                showAppMenu = null
+                            }
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                        )
+
+                        // Uninstall App (System Intent)
+                        AppMenuButton(
+                            icon = Icons.Rounded.DeleteForever,
+                            text = "Uninstall App",
+                            isSelected = false,
+                            color = MaterialTheme.colorScheme.error,
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_DELETE).apply {
+                                    data = android.net.Uri.parse("package:${app.packageName}")
+                                }
+                                context.startActivity(intent)
+                                showAppMenu = null
+                            }
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Favorite
-                    Button(
-                        onClick = { viewModel.toggleFavorite(app.packageName); showAppMenu = null },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(if (isFavorite) "★ Remove from Favorites" else "☆ Add to Favorites")
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Exempt from timer
-                    Button(
-                        onClick = { viewModel.toggleExempt(app.packageName); showAppMenu = null },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isExempt) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(if (isExempt) "⚡ Remove Timer Exemption" else "⚡ Exempt from 5s Timer")
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Hide
                     TextButton(
-                        onClick = { viewModel.hideApp(app.packageName); showAppMenu = null },
+                        onClick = { showAppMenu = null },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Hide App", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+                        Text(
+                            "Dismiss",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AppMenuButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String,
+    isSelected: Boolean,
+    color: Color = MaterialTheme.colorScheme.primary,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = if (isSelected) color.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        border = BorderStroke(1.dp, if (isSelected) color.copy(alpha = 0.2f) else Color.Transparent),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isSelected) color else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = if (isSelected) color else MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }

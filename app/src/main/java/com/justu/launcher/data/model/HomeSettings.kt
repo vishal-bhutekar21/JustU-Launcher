@@ -15,5 +15,7 @@ data class HomeSettings(
     val blockedApps: Set<String> = emptySet(),
     val favoritesAlignment: String = "CENTER",
     val blockYoutubeShorts: Boolean = false,
-    val exemptApps: Set<String> = emptySet()  // Apps that skip the 5s mindful timer
+    val exemptApps: Set<String> = emptySet(),  // Apps that skip the 5s mindful timer
+    val hasInitializedExemptions: Boolean = false,
+    val timerReminderCount: Int = 0
 )

@@ -6,7 +6,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-fun getTypography(fontFamilyName: String, scale: Float = 1.0f): Typography {
+fun getTypography(fontFamilyName: String, scale: Float = 1.12f): Typography {
     val family = when (fontFamilyName.uppercase()) {
         "MONOSPACE" -> FontFamily.Monospace
         "SERIF" -> FontFamily.Serif
@@ -17,63 +17,63 @@ fun getTypography(fontFamilyName: String, scale: Float = 1.0f): Typography {
     return Typography(
         displayLarge = TextStyle(
             fontFamily = family,
-            fontWeight = FontWeight.Medium,
-            fontSize = (56 * scale).sp,
-            lineHeight = (64 * scale).sp,
-            letterSpacing = (-0.25).sp
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = (48 * scale).sp,
+            lineHeight = (56 * scale).sp,
+            letterSpacing = (-0.5).sp
         ),
         displayMedium = TextStyle(
             fontFamily = family,
-            fontWeight = FontWeight.Medium,
-            fontSize = (40 * scale).sp,
-            lineHeight = (48 * scale).sp,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = (36 * scale).sp,
+            lineHeight = (44 * scale).sp,
             letterSpacing = 0.sp
         ),
         displaySmall = TextStyle(
             fontFamily = family,
-            fontWeight = FontWeight.Medium,
-            fontSize = (32 * scale).sp,
-            lineHeight = (40 * scale).sp,
+            fontWeight = FontWeight.Bold,
+            fontSize = (30 * scale).sp,
+            lineHeight = (38 * scale).sp,
             letterSpacing = 0.sp
         ),
         headlineLarge = TextStyle(
             fontFamily = family,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = (32 * scale).sp,
-            lineHeight = (40 * scale).sp,
-            letterSpacing = 0.sp
-        ),
-        headlineMedium = TextStyle(
-            fontFamily = family,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             fontSize = (28 * scale).sp,
             lineHeight = (36 * scale).sp,
             letterSpacing = 0.sp
         ),
-        headlineSmall = TextStyle(
+        headlineMedium = TextStyle(
             fontFamily = family,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             fontSize = (24 * scale).sp,
             lineHeight = (32 * scale).sp,
             letterSpacing = 0.sp
         ),
+        headlineSmall = TextStyle(
+            fontFamily = family,
+            fontWeight = FontWeight.Bold,
+            fontSize = (20 * scale).sp,
+            lineHeight = (28 * scale).sp,
+            letterSpacing = 0.sp
+        ),
         titleLarge = TextStyle(
             fontFamily = family,
-            fontWeight = FontWeight.Medium,
-            fontSize = (22 * scale).sp,
-            lineHeight = (28 * scale).sp,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = (19 * scale).sp,
+            lineHeight = (26 * scale).sp,
             letterSpacing = 0.sp
         ),
         titleMedium = TextStyle(
             fontFamily = family,
-            fontWeight = FontWeight.Medium,
-            fontSize = (18 * scale).sp,
-            lineHeight = (24 * scale).sp,
-            letterSpacing = 0.15.sp
+            fontWeight = FontWeight.SemiBold,
+            fontSize = (16 * scale).sp,
+            lineHeight = (22 * scale).sp,
+            letterSpacing = 0.1.sp
         ),
         titleSmall = TextStyle(
             fontFamily = family,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
             fontSize = (14 * scale).sp,
             lineHeight = (20 * scale).sp,
             letterSpacing = 0.1.sp
@@ -82,41 +82,41 @@ fun getTypography(fontFamilyName: String, scale: Float = 1.0f): Typography {
             fontFamily = family,
             fontWeight = FontWeight.Normal,
             fontSize = (16 * scale).sp,
-            lineHeight = (24 * scale).sp,
-            letterSpacing = 0.5.sp
+            lineHeight = (26 * scale).sp,
+            letterSpacing = 0.2.sp
         ),
         bodyMedium = TextStyle(
             fontFamily = family,
             fontWeight = FontWeight.Normal,
             fontSize = (14 * scale).sp,
-            lineHeight = (20 * scale).sp,
-            letterSpacing = 0.25.sp
+            lineHeight = (22 * scale).sp,
+            letterSpacing = 0.2.sp
         ),
         bodySmall = TextStyle(
             fontFamily = family,
             fontWeight = FontWeight.Normal,
             fontSize = (12 * scale).sp,
-            lineHeight = (16 * scale).sp,
+            lineHeight = (18 * scale).sp,
             letterSpacing = 0.4.sp
         ),
         labelLarge = TextStyle(
             fontFamily = family,
-            fontWeight = FontWeight.Medium,
-            fontSize = (14 * scale).sp,
-            lineHeight = (20 * scale).sp,
-            letterSpacing = 0.1.sp
+            fontWeight = FontWeight.Bold,
+            fontSize = (13 * scale).sp,
+            lineHeight = (18 * scale).sp,
+            letterSpacing = 1.sp
         ),
         labelMedium = TextStyle(
             fontFamily = family,
             fontWeight = FontWeight.Medium,
-            fontSize = (12 * scale).sp,
+            fontSize = (11 * scale).sp,
             lineHeight = (16 * scale).sp,
             letterSpacing = 0.5.sp
         ),
         labelSmall = TextStyle(
             fontFamily = family,
             fontWeight = FontWeight.Medium,
-            fontSize = (11 * scale).sp,
+            fontSize = (10 * scale).sp,
             lineHeight = (16 * scale).sp,
             letterSpacing = 0.5.sp
         )

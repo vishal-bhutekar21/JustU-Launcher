@@ -51,83 +51,77 @@ fun FavoriteAppsPickerScreen(
             .navigationBarsPadding()
             .padding(horizontal = 24.dp)
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(48.dp))
 
         Text(
-            text = "Favorite Apps",
-            style = MaterialTheme.typography.displaySmall,
+            text = "Favorites",
+            style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.onBackground
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Choose up to $maxFavorites apps to pin on your home screen.",
+            text = "Pick $maxFavorites apps for your home screen.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // Count badge
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         ) {
-            Text(
-                text = "Selected",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                repeat(maxFavorites) { index ->
-                    val filled = index < currentCount
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 3.dp)
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "$currentCount / $maxFavorites",
+                    text = "$currentCount / $maxFavorites Selected",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (currentCount >= maxFavorites) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    fontWeight = FontWeight.Bold
                 )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    repeat(maxFavorites) { index ->
+                        val filled = index < currentCount
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 3.dp)
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                        )
+                    }
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text("Search apps...", color = Color.White.copy(alpha = 0.35f)) },
+            placeholder = { Text("Search apps...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)) },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
             ),
             singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            contentPadding = PaddingValues(bottom = 16.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            // Show selected apps first, then the rest
             val selected = filteredApps.filter { favSet.contains(it.packageName) }
             val unselected = filteredApps.filter { !favSet.contains(it.packageName) }
             val sorted = selected + unselected
@@ -136,72 +130,73 @@ fun FavoriteAppsPickerScreen(
                 val isFavorite = favSet.contains(app.packageName)
                 val canAddMore = currentCount < maxFavorites
 
-                FavoriteAppPickerRow(
+                ZenAppPickerRow(
                     app = app,
-                    isFavorite = isFavorite,
+                    isSelected = isFavorite,
                     enabled = isFavorite || canAddMore,
                     onToggle = { onToggleFavorite(app.packageName) }
-                )
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                        contentDescription = null,
+                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
 
         Button(
             onClick = onBack,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth().height(52.dp)
+            modifier = Modifier.fillMaxWidth().height(64.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.onBackground,
+                contentColor = MaterialTheme.colorScheme.background
+            )
         ) {
-            Text("Done", fontWeight = FontWeight.SemiBold)
+            Text("Done", fontWeight = FontWeight.Bold)
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(48.dp))
     }
 }
 
 @Composable
-private fun FavoriteAppPickerRow(
+private fun ZenAppPickerRow(
     app: AppInfo,
-    isFavorite: Boolean,
+    isSelected: Boolean,
     enabled: Boolean,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    trailingContent: @Composable () -> Unit
 ) {
-    val bgAlpha by animateFloatAsState(
-        targetValue = if (isFavorite) 0.12f else 0.04f,
-        animationSpec = tween(200),
-        label = "rowBg"
-    )
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = bgAlpha))
-            .clickable(enabled = enabled, onClick = onToggle)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        onClick = onToggle,
+        enabled = enabled,
+        shape = RoundedCornerShape(20.dp),
+        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = app.label,
-                style = MaterialTheme.typography.titleMedium,
-                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                fontWeight = if (isFavorite) FontWeight.SemiBold else FontWeight.Normal
-            )
-            Text(
-                text = app.packageName,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
-                fontSize = 10.sp
-            )
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = app.label,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                )
+                Text(
+                    text = app.packageName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                )
+            }
+            trailingContent()
         }
-
-        Icon(
-            imageVector = if (isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-            contentDescription = null,
-            tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
-            modifier = Modifier.size(24.dp)
-        )
     }
 }
 
@@ -225,49 +220,44 @@ fun ExemptAppsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 24.dp)
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(48.dp))
 
-        Text("Timer-Exempt Apps", style = MaterialTheme.typography.displaySmall, color = Color.White)
-        Spacer(modifier = Modifier.height(4.dp))
+        Text("Exempt Apps", style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.onBackground)
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Exempt apps open instantly — no 5-second mindful pause.",
+            text = "Apps that open instantly without the mindful pause.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
         )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = "Use this for important apps like Phone, Maps, or Messages.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f)
-        )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text("Search apps...", color = Color.White.copy(alpha = 0.35f)) },
+            placeholder = { Text("Search apps...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)) },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
             ),
             singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            contentPadding = PaddingValues(bottom = 16.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             val exempted = filteredApps.filter { exemptApps.contains(it.packageName) }
             val rest = filteredApps.filter { !exemptApps.contains(it.packageName) }
@@ -275,38 +265,18 @@ fun ExemptAppsScreen(
             items(exempted + rest, key = { it.packageName }) { app ->
                 val isExempt = exemptApps.contains(app.packageName)
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (isExempt) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface)
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                ZenAppPickerRow(
+                    app = app,
+                    isSelected = isExempt,
+                    enabled = true,
+                    onToggle = { onToggleExempt(app.packageName) }
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = app.label,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = if (isExempt) FontWeight.SemiBold else FontWeight.Normal
-                        )
-                        if (isExempt) {
-                            Text(
-                                text = "⚡ Opens instantly",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                            )
-                        }
-                    }
                     Switch(
                         checked = isExempt,
                         onCheckedChange = { onToggleExempt(app.packageName) },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            uncheckedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
                         )
                     )
                 }
@@ -315,13 +285,115 @@ fun ExemptAppsScreen(
 
         Button(
             onClick = onBack,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth().height(52.dp)
+            modifier = Modifier.fillMaxWidth().height(64.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.onBackground,
+                contentColor = MaterialTheme.colorScheme.background
+            )
         ) {
-            Text("Done", fontWeight = FontWeight.SemiBold)
+            Text("Done", fontWeight = FontWeight.Bold)
         }
 
+        Spacer(modifier = Modifier.height(48.dp))
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HIDDEN APPS SCREEN
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun HiddenAppsScreen(
+    allApps: List<AppInfo>,
+    hiddenApps: Set<String>,
+    onToggleHidden: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredApps = remember(allApps, searchQuery) {
+        if (searchQuery.isEmpty()) allApps
+        else allApps.filter { it.label.contains(searchQuery, ignoreCase = true) }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 24.dp)
+    ) {
+        Spacer(modifier = Modifier.height(48.dp))
+
+        Text("Hidden Apps", style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.onBackground)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Apps hidden from your main app drawer.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+        )
+
         Spacer(modifier = Modifier.height(32.dp))
+
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Search apps...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+            ),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(bottom = 24.dp)
+        ) {
+            val hidden = filteredApps.filter { hiddenApps.contains(it.packageName) }
+            val rest = filteredApps.filter { !hiddenApps.contains(it.packageName) }
+
+            items(hidden + rest, key = { it.packageName }) { app ->
+                val isHidden = hiddenApps.contains(app.packageName)
+
+                ZenAppPickerRow(
+                    app = app,
+                    isSelected = isHidden,
+                    enabled = true,
+                    onToggle = { onToggleHidden(app.packageName) }
+                ) {
+                    Switch(
+                        checked = isHidden,
+                        onCheckedChange = { onToggleHidden(app.packageName) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+            }
+        }
+
+        Button(
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth().height(64.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.onBackground,
+                contentColor = MaterialTheme.colorScheme.background
+            )
+        ) {
+            Text("Done", fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(48.dp))
     }
 }

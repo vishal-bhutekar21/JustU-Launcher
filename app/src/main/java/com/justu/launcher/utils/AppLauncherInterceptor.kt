@@ -19,23 +19,28 @@ object AppLauncherInterceptor {
         val isExempt = exemptPackages.contains(packageName)
 
         when {
-            // Blocked app — always show restriction screen regardless of exemption
+            // Blocked app — always show restriction screen
             isBlocked -> {
                 startMindful(context, intent, packageName, isFocusMode = false, isBlocked = true)
             }
 
+            // Focus Mode Logic:
+            // If Focus Mode is ON, only Favorite apps can open.
+            // All other apps (even if exempt from timer) show the Blocked screen.
+            isFocusMode -> {
+                if (isFavorite) {
+                    // Favorites open in Focus Mode. We check if they need the mindful timer.
+                    if (isExempt) context.startActivity(intent)
+                    else startMindful(context, intent, packageName, isFocusMode = false, isBlocked = false)
+                } else {
+                    // Non-favorites are blocked in Focus Mode
+                    startMindful(context, intent, packageName, isFocusMode = true, isBlocked = false)
+                }
+            }
+
+            // Normal Mode:
             // Exempt app — always open directly, skip mindful timer
             isExempt -> {
-                context.startActivity(intent)
-            }
-
-            // Focus Mode ON and app is NOT a favorite — show mindful screen
-            isFocusMode && !isFavorite -> {
-                startMindful(context, intent, packageName, isFocusMode = true, isBlocked = false)
-            }
-
-            // Focus Mode ON and app IS a favorite — open directly
-            isFocusMode && isFavorite -> {
                 context.startActivity(intent)
             }
 

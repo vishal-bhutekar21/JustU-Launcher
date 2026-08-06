@@ -44,6 +44,44 @@ class HomeViewModel @Inject constructor(
         loadFavoriteApps()
         startClock()
         startBatteryPolling()
+        initializeExemptionsIfNeeded()
+    }
+
+    private fun initializeExemptionsIfNeeded() {
+        viewModelScope.launch {
+            val settings = settingsRepository.homeSettings.first()
+            if (!settings.hasInitializedExemptions) {
+                val allApps = appRepository.getInstalledApps()
+                
+                // Define essential apps that should always skip the timer by default
+                val essentialKeywords = listOf(
+                    "dialer", "phone", "contact", "camera", "whatsapp", 
+                    "pay", "gpay", "message", "mms", "sms", "clock"
+                )
+                
+                val defaultExempt = allApps.filter { app ->
+                    val label = app.label.lowercase()
+                    val pkg = app.packageName.lowercase()
+                    essentialKeywords.any { keyword -> 
+                        label.contains(keyword) || pkg.contains(keyword) 
+                    }
+                }.map { it.packageName }.toSet()
+
+                settingsRepository.updateExemptApps(defaultExempt)
+                settingsRepository.markExemptionsInitialized()
+            }
+        }
+    }
+
+    fun dismissTimerReminder(neverShowAgain: Boolean = false) {
+        viewModelScope.launch {
+            val currentCount = homeSettings.value.timerReminderCount
+            if (neverShowAgain) {
+                settingsRepository.updateTimerReminderCount(99)
+            } else {
+                settingsRepository.updateTimerReminderCount(currentCount + 1)
+            }
+        }
     }
 
     private fun loadFavoriteApps() {

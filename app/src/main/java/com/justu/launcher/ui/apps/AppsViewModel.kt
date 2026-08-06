@@ -20,14 +20,20 @@ class AppsViewModel @Inject constructor(
     val homeSettings: StateFlow<HomeSettings> = settingsRepository.homeSettings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeSettings())
 
-    // All apps, sorted alphabetically, filtered by hidden list — no search
-    val apps: StateFlow<List<AppInfo>> = settingsRepository.homeSettings
-        .map { settings ->
-            appRepository.getInstalledApps()
-                .filter { !settings.hiddenApps.contains(it.packageName) }
-                .sortedBy { it.label.lowercase() }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    // All apps, sorted alphabetically, filtered by hidden list and search query
+    val apps: StateFlow<List<AppInfo>> = combine(settingsRepository.homeSettings, _searchQuery) { settings, query ->
+        appRepository.getInstalledApps()
+            .filter { !settings.hiddenApps.contains(it.packageName) }
+            .filter { it.label.contains(query, ignoreCase = true) }
+            .sortedBy { it.label.lowercase() }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
 
     fun toggleFavorite(packageName: String) {
         viewModelScope.launch {

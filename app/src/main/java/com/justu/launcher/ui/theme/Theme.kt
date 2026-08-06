@@ -12,38 +12,36 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = LightText,
-    secondary = LightText,
-    tertiary = LightText,
+private val ZenDarkColorScheme = darkColorScheme(
+    primary = ZenOrange,
+    secondary = ZenAmber,
+    tertiary = ZenGold,
     background = PureBlack,
-    surface = PureBlack,
+    surface = DarkSurface,
+    surfaceVariant = DarkGray,
     onPrimary = PureBlack,
     onSecondary = PureBlack,
     onTertiary = PureBlack,
     onBackground = LightText,
-    onSurface = LightText
+    onSurface = LightText,
+    onSurfaceVariant = MutedText,
+    outline = DarkGray
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = SoftBlue,
-    secondary = SoftBlueMuted,
-    tertiary = Color(0xFF4D7BFF),
-    background = LightBackground,
-    surface = SoftSurface,
-    surfaceVariant = SoftBlueTint,
-    primaryContainer = SoftBlueTint,
-    secondaryContainer = Color(0xFFE1EBFF),
-    tertiaryContainer = Color(0xFFDCE6FF),
-    onPrimary = PureWhite,
-    onSecondary = PureWhite,
-    onTertiary = PureWhite,
-    onBackground = DarkText,
-    onSurface = DarkText,
-    onPrimaryContainer = DarkText,
-    onSecondaryContainer = DarkText,
-    onTertiaryContainer = DarkText,
-    outline = Color(0xFFC6D6F4)
+private val ZenLightColorScheme = lightColorScheme(
+    primary = ZenOrange,
+    secondary = ZenAmber,
+    tertiary = ZenGold,
+    background = WarmBackground,
+    surface = WarmSurface,
+    surfaceVariant = WarmSand,
+    onPrimary = ZenTextLight,
+    onSecondary = ZenTextLight,
+    onTertiary = ZenTextLight,
+    onBackground = ZenTextDark,
+    onSurface = ZenTextDark,
+    onSurfaceVariant = ZenTextMuted,
+    outline = WarmSand
 )
 
 @Composable
@@ -62,17 +60,17 @@ fun JustUTheme(
 
     val colorScheme = if (darkTheme) {
         if (themeMode == com.justu.launcher.data.model.ThemeMode.PURE_BLACK) {
-            DarkColorScheme.copy(
+            ZenDarkColorScheme.copy(
                 background = PureBlack,
                 surface = PureBlack
             )
         } else {
-            DarkColorScheme
+            ZenDarkColorScheme
         }
     } else {
-        LightColorScheme
+        ZenLightColorScheme
     }
-    
+
     val view = LocalView.current
 
     if (!view.isInEditMode) {

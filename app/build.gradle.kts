@@ -11,9 +11,9 @@ android {
 
     defaultConfig {
         applicationId = "com.justu.launcher"
-        minSdk = 26
+        minSdk = 21
         targetSdk = 36
-        versionCode = 10000
+        versionCode = 3
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -33,16 +33,16 @@ android {
     buildTypes {
         debug {
             signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = true
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // For release: sign with your own keystore
-            // signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
